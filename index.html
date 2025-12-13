@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SAWYAN BANK - منصة حجز الأسهم الاستثمارية - استثمر بثقة">
+    <title>SAWYAN BANK | جولة حجز الأسهم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <img src="logo_transparent.png" alt="SAWYAN BANK" class="logo-img">
+            </div>
+            <nav class="main-nav">
+                <a href="#overview" class="nav-link">نظرة عامة</a>
+                <a href="#reserve" class="nav-link">احجز الآن</a>
+                <a href="#participants" class="nav-link">المشاركون</a>
+                <button id="adminBtn" class="admin-btn">⚙️ لوحة التحكم</button>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-badge"><span class="pulse-dot"></span> جولة مفتوحة الآن</div>
+            <h1 class="hero-title">محفظة مؤسسي <span class="gradient-text">SAWYAN BANK</span></h1>
+            <p class="hero-subtitle">انضم إلينا .. هنا ندير استثماراتنا بطريقة جماعية شفافة</p>
+            <div class="hero-status" style="margin-top: 24px; text-align: center;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">(الموقف
+                    الان)</h2>
+                <p style="font-size: 1.1rem; color: var(--text-secondary);">نتابع تقدم المرحلة بشكل لحظي</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="overview" class="overview-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">نظرة عامة على الجولة</h2>
+                <p class="section-subtitle">تابع تقدم الجولة بشكل لحظي</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon total">📊</div>
+                    <div class="stat-info"><span class="stat-label">إجمالي الأسهم</span><span class="stat-value"
+                            id="totalShares">1000</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon percentage">💰</div>
+                    <div class="stat-info"><span class="stat-label">قيمة السهم</span><span class="stat-value"><span
+                                id="sharePriceDisplay">0</span> $</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon reserved">✅</div>
+                    <div class="stat-info"><span class="stat-label">الأسهم المحجوزة</span><span class="stat-value"
+                            id="reservedShares">0</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon remaining">⏳</div>
+                    <div class="stat-info"><span class="stat-label">الأسهم المتبقية</span><span class="stat-value"
+                            id="remainingShares">1000</span></div>
+                </div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-header"><span class="progress-label">تقدم الجولة الاستثمارية</span><span
+                        class="progress-percent" id="progressPercent">0%</span></div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-glow"></div>
+                    </div>
+                </div>
+                <div class="progress-tooltip" id="progressTooltip">آخر تحديث: <span id="lastUpdate">الآن</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="reserve" class="reservation-section">
+        <div class="container">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h2 class="form-title">في ثوان احجز أسهمك فورا</h2>
+                    <p class="form-subtitle">املأ البيانات التالية لحجز أسهمك</p>
+                </div>
+                <form id="reservationForm" class="reservation-form"></form>
+                <div class="success-message" id="successMessage">
+                    <div class="success-icon">✅</div>
+                    <h3>تم الحجز بنجاح! 🎉</h3>
+                    <p>شكراً لك على المشاركة</p>
+                    <p class="reservation-ref">رقم الحجز: <span id="reservationRef"></span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="participants" class="participants-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">المشاركون في الجولة الحالية</h2>
+                <p class="section-subtitle">انضم لهؤلاء المستثمرين</p>
+            </div>
+            <div class="participants-grid" id="participantsGrid"></div>
+            <div class="no-participants" id="noParticipants">
+                <div class="empty-icon">👥</div>
+                <p>لا يوجد مشاركون معروضون حالياً</p><span>كن أول من ينضم للجولة!</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="activity-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title"><span class="live-indicator"></span> النشاط المباشر</h2>
+            </div>
+            <div class="activity-feed" id="activityFeed"></div>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal-content admin-modal">
+            <div class="modal-header">
+                <h2>لوحة تحكم المدير</h2><button class="close-modal" id="closeAdminModal">×</button>
+            </div>
+            <div class="admin-login" id="adminLogin">
+                <div class="login-icon">🔐</div>
+                <h3>تسجيل الدخول</h3>
+                <form id="adminLoginForm">
+                    <div class="form-group"><label for="adminPassword">كلمة المرور</label><input type="password"
+                            id="adminPassword" placeholder="أدخل كلمة المرور"></div><button type="submit"
+                        class="submit-btn">دخول</button>
+                    <p class="login-error" id="loginError">كلمة المرور غير صحيحة</p>
+                </form>
+            </div>
+            <div class="admin-dashboard" id="adminDashboard"></div>
+        </div>
+    </div>
+
+    <div class="round-closed-overlay" id="roundClosedOverlay">
+        <div class="closed-content">
+            <div class="closed-icon">🔒</div>
+            <h2>الجولة مغلقة حالياً</h2>
+            <p>سيتم الإعلان عن الجولة القادمة قريباً</p>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <img src="logo_transparent.png" alt="SAWYAN BANK" class="logo-img">
+                    </div>
+                    <p>منصة استثمارية شفافة وآمنة</p>
+                </div>
+                <div class="footer-privacy">
+                    <h4>سياسة الخصوصية</h4>
+                    <p>يتم عرض البيانات فقط بموافقة صريحة من المستخدم.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 SAWYAN BANK. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
