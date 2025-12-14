@@ -50,11 +50,11 @@ async function fetchData() {
 
         if (settingsData) {
             state.settings = {
-                totalShares: settingsData.total_shares,
-                sharePrice: settingsData.share_price,
-                isRoundOpen: settingsData.is_round_open,
-                allowImages: settingsData.allow_images,
-                displayMode: settingsData.display_mode
+                totalShares: settingsData.total_shares || 1000,
+                sharePrice: settingsData.share_price || 500,
+                isRoundOpen: (settingsData.is_round_open !== undefined && settingsData.is_round_open !== null) ? settingsData.is_round_open : true,
+                allowImages: settingsData.allow_images !== undefined ? settingsData.allow_images : true,
+                displayMode: settingsData.display_mode || 'full'
             };
         } else if (settingsError) {
             console.warn("Settings not found, using defaults. ensure SQL script is run.");

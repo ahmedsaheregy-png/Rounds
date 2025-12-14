@@ -10,7 +10,8 @@
     --bg-card: rgba(255, 255, 255, 0.95);
     --bg-glass: rgba(59, 130, 161, 0.08);
     --text-primary: #1a1a2e;
-    --text-secondary: #64748b;
+    --text-secondary: #334155;
+    /* Darker grey as requested */
     --border: rgba(59, 130, 161, 0.2);
     --shadow: 0 25px 50px -12px rgba(59, 130, 161, 0.15);
     --gradient-1: linear-gradient(135deg, #3b82a1 0%, #5ba3c4 50%, #7ec8e3 100%);
@@ -125,19 +126,36 @@ select {
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
+    /* No background as requested */
     z-index: 1000;
-    padding: 12px 0;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    padding: 24px 0;
+    /* Removed shadow and border for clean look */
 }
 
 .main-header .container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    /* Center the logo */
     align-items: center;
+}
+
+.logo-img {
+    height: 80px;
+    /* Made bigger */
+    width: auto;
+    object-fit: contain;
+    /* mix-blend-mode removed */
+}
+
+/* ... existing code ... */
+
+@media (max-width: 768px) {
+    .main-header .container {
+        flex-direction: row;
+        justify-content: center;
+        /* Center on mobile too */
+    }
 }
 
 .logo {
