@@ -196,8 +196,8 @@ function initializeForm() {
                     <label class="privacy-option">
                         <input type="radio" name="privacy" value="full" checked>
                         <span class="option-content">
-                            <span class="option-title">عرض الاسم الكامل + الصورة (موصى به)</span>
-                            <span class="option-desc">يظهر اسمك وصورتك في قائمة المؤسسين (نرجو التكرم باختيار الاختيار الثالث للتعارف وتشجيع باقي الزملاء)</span>
+                            <span class="option-title">عرض الاسم + الصورة الشخصية</span>
+                            <span class="option-desc">سيظهر اسمك وصورتك في قائمة المؤسيين (نوصي بهذا الاختيار للتعارف وتشجيع باقي الزملاء)</span>
                         </span>
                     </label>
                     <label class="privacy-option">
