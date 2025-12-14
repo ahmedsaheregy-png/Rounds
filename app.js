@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error("Supabase init error:", error);
-        alert("خطأ في الاتصال بقاعدة البيانات");
+        alert("تنبيه: " + (error.message || JSON.stringify(error)));
     }
 });
 
