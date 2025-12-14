@@ -261,7 +261,26 @@ select {
     color: var(--text-secondary);
     max-width: 900px;
     margin: 0 auto 32px;
-    white-space: nowrap;
+    line-height: 1.6;
+}
+
+.text-highlight {
+    color: var(--primary);
+    font-weight: 800;
+    position: relative;
+    display: inline-block;
+}
+
+.text-highlight::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: rgba(59, 130, 161, 0.1);
+    z-index: -1;
+    border-radius: 4px;
 }
 
 .cta-button {
@@ -1381,21 +1400,25 @@ select {
     }
 
     .hero-title {
-        font-size: 2rem;
+        font-size: 1.8rem;
         padding: 0 10px;
+        line-height: 1.3;
+        margin-bottom: 20px;
     }
 
     .hero-subtitle {
-        font-size: 1.2rem;
-        white-space: normal;
-        /* Fix for wrapping */
+        font-size: 1.1rem;
         padding: 0 16px;
+        margin-bottom: 24px;
+        white-space: normal;
     }
 
     .hero-status-box {
         padding: 16px 24px;
-        width: 90%;
-        max-width: 350px;
+        width: 85%;
+        max-width: 320px;
+        border-radius: 30px;
+        margin-top: 20px;
     }
 
     .hero-status-box h2 {

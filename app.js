@@ -1,66 +1,128 @@
-// === INVESTMENT SHARES RESERVATION SYSTEM ===
+// === CONFIGURATION ===
+const SUPABASE_URL = 'https://antzuhakwgyuswjipmnf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFudHp1aGFrd2d5dXN3amlwbW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjA4ODUsImV4cCI6MjA4MTIzNjg4NX0.xqhNrQk2hwMzCve2kpfhH0JeYXHhsMx1FEgWajydV3A';
+let supabase;
 
-// Configuration & State
-const CONFIG = {
-    adminPassword: '123456',
-    defaultTotalShares: 1000,
-    sharePrice: 500
-};
-
-let state = {
+// === STATE MANAGEMENT ===
+const state = {
     settings: {
         totalShares: 1000,
         sharePrice: 500,
-        roundOpen: true,
+        isRoundOpen: true,
         allowImages: true,
-        displayMode: 'full' // 'numbers', 'anonymous', 'full'
+        displayMode: 'full' // full, list, grid
     },
     reservations: [],
-    activities: []
+    loading: true
 };
 
-// Initialize Application
-document.addEventListener('DOMContentLoaded', () => {
-    loadState();
-    initializeForm();
-    initializeAdminPanel();
-    updateDisplay();
-    generateSampleData();
+// === INITIALIZATION ===
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        if (window.supabase) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            await initApp();
+        } else {
+            console.error("Supabase library not loaded");
+            alert("فشل تحميل المكتبات اللازمة");
+        }
+    } catch (error) {
+        console.error("Supabase init error:", error);
+        alert("خطأ في الاتصال بقاعدة البيانات");
+    }
 });
 
-// === STATE MANAGEMENT ===
-function loadState() {
-    const saved = localStorage.getItem('investmentState');
-    if (saved) {
-        const savedState = JSON.parse(saved);
-        // Merge saved state with default structure to handle new fields
-        state = {
-            ...state,
-            ...savedState,
-            settings: { ...state.settings, ...savedState.settings }
-        };
-        // Ensure sharePrice exists
-        if (!state.settings.sharePrice) state.settings.sharePrice = 500;
+async function initApp() {
+    await fetchData();
+    setupRealtimeSubscription();
+    initializeForm();
+    renderApp();
+    setupEventListeners();
+}
+
+async function fetchData() {
+    try {
+        // Fetch Settings
+        const { data: settingsData, error: settingsError } = await supabase
+            .from('settings')
+            .select('*')
+            .single();
+
+        if (settingsData) {
+            state.settings = {
+                totalShares: settingsData.total_shares,
+                sharePrice: settingsData.share_price,
+                isRoundOpen: settingsData.is_round_open,
+                allowImages: settingsData.allow_images,
+                displayMode: settingsData.display_mode
+            };
+        } else if (settingsError) {
+            console.warn("Settings not found, using defaults. ensure SQL script is run.");
+        }
+
+        // Fetch Reservations
+        const { data: reservationsData, error: reservationsError } = await supabase
+            .from('reservations')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+        if (reservationsData) {
+            state.reservations = reservationsData;
+        }
+
+        state.loading = false;
+        updateDisplay();
+    } catch (error) {
+        console.error('Error fetching data:', error);
     }
-    checkRoundStatus();
 }
 
-function saveState() {
-    localStorage.setItem('investmentState', JSON.stringify(state));
+function setupRealtimeSubscription() {
+    supabase
+        .channel('public:any')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, payload => {
+            handleRealtimeReservation(payload);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, payload => {
+            handleRealtimeSettings(payload);
+        })
+        .subscribe();
 }
 
-function checkRoundStatus() {
-    const overlay = document.getElementById('roundClosedOverlay');
-    if (!state.settings.roundOpen) {
-        overlay.classList.add('show');
-    } else {
-        overlay.classList.remove('show');
+function handleRealtimeReservation(payload) {
+    if (payload.eventType === 'INSERT') {
+        state.reservations.push(payload.new);
+    } else if (payload.eventType === 'UPDATE') {
+        const index = state.reservations.findIndex(r => r.id === payload.new.id);
+        if (index !== -1) {
+            // Merge to keep local fields if any, though standard is rewrite
+            state.reservations[index] = payload.new;
+        }
+    } else if (payload.eventType === 'DELETE') {
+        state.reservations = state.reservations.filter(r => r.id !== payload.old.id);
+    }
+    updateDisplay();
+}
+
+function handleRealtimeSettings(payload) {
+    if (payload.new) {
+        const s = payload.new;
+        state.settings = {
+            totalShares: s.total_shares,
+            sharePrice: s.share_price,
+            isRoundOpen: s.is_round_open,
+            allowImages: s.allow_images,
+            displayMode: s.display_mode
+        };
+        updateDisplay();
     }
 }
 
 // === FORM INITIALIZATION ===
 function initializeForm() {
     const form = document.getElementById('reservationForm');
+    if (!form) return;
+
     const formHtml = `
         <div class="shares-amount-container">
             <div class="shares-amount-box">
@@ -68,7 +130,7 @@ function initializeForm() {
                 <div style="position: relative; max-width: 150px; margin: 0 auto;">
                     <input type="number" id="shares" name="shares" min="1" required placeholder="0" style="text-align: center; font-size: 1.5rem; padding: 8px; width: 100%;">
                 </div>
-                <span class="available-hint" style="margin-top: 8px; display: block;">متاح: <span id="availableHint">${getRemainingShares()}</span> سهم</span>
+                <span class="available-hint" style="margin-top: 8px; display: block;">متاح: <span id="availableHint">...</span> سهم</span>
             </div>
             <div class="shares-amount-box">
                 <label>القيمة الإجمالية</label>
@@ -128,615 +190,417 @@ function initializeForm() {
                     <input type="tel" id="phone" name="phone" required placeholder="5XX XXX XXXX" style="flex: 1;">
                 </div>
             </div>
-        </div>
-        
-        <div class="form-group full-width">
-            <label>مستوى الخصوصية <span class="required">*</span> <span style="font-size: 0.85rem; font-weight: normal; color: var(--primary); display: block; margin-top: 4px;">(نرجو التكرم باختيار الاختيار الثالث للتعارف وتشجيع باقي الزملاء)</span></label>
-            <div class="privacy-options">
-                <label class="privacy-option">
-                    <input type="radio" name="privacy" value="anonymous" required>
-                    <span class="option-content">
-                        <span class="custom-radio"></span>
-                        <span class="option-icon">🔒</span>
-                        <span class="option-text">
-                            <span class="option-title">عرض الحجز بدون اسم</span>
-                            <span class="option-desc">سيظهر حجزك بشكل مجهول</span>
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>نوع الخصوصية</label>
+                <div class="privacy-options">
+                    <label class="privacy-option">
+                        <input type="radio" name="privacy" value="full" checked>
+                        <span class="option-content">
+                            <span class="option-title">عرض الاسم الكامل + الصورة (موصى به)</span>
+                            <span class="option-desc">يظهر اسمك وصورتك في قائمة المؤسسين (نرجو التكرم باختيار الاختيار الثالث للتعارف وتشجيع باقي الزملاء)</span>
                         </span>
-                    </span>
-                </label>
-                <label class="privacy-option">
-                    <input type="radio" name="privacy" value="firstName">
-                    <span class="option-content">
-                        <span class="custom-radio"></span>
-                        <span class="option-icon">👤</span>
-                        <span class="option-text">
-                            <span class="option-title">عرض الاسم الأول فقط</span>
-                            <span class="option-desc">سيظهر اسمك الأول للمشاركين</span>
+                    </label>
+                    <label class="privacy-option">
+                        <input type="radio" name="privacy" value="name_only">
+                        <span class="option-content">
+                            <span class="option-title">عرض الاسم فقط</span>
+                            <span class="option-desc">يظهر اسمك فقط ويتم إخفاء صورتك</span>
                         </span>
-                    </span>
-                </label>
-                <label class="privacy-option">
-                    <input type="radio" name="privacy" value="full" checked>
-                    <span class="option-content">
-                        <span class="custom-radio"></span>
-                        <span class="option-icon">🌟</span>
-                        <span class="option-text">
-                            <span class="option-title">عرض الاسم + الصورة</span>
-                            <span class="option-desc">ستظهر صورتك واسمك كاملاً</span>
+                    </label>
+                    <label class="privacy-option">
+                        <input type="radio" name="privacy" value="anonymous">
+                        <span class="option-content">
+                            <span class="option-title">فاعل خير (مخفي)</span>
+                            <span class="option-desc">لا يظهر اسمك ولا صورتك في القائمة</span>
                         </span>
-                    </span>
-                </label>
+                    </label>
+                </div>
             </div>
         </div>
-        
-        <button type="submit" class="submit-btn" id="submitBtn">
-            <span class="btn-text">تأكيد الحجز</span>
-            <span class="btn-loader"></span>
-        </button>
+
+        <button type="submit" class="cta-button" id="submitBtn" style="width: 100%; margin-top: 24px;">تأكيد الحجز</button>
+        <div class="success-message" id="successMessage">
+            تم الحجز بنجاح! رقم طلبك: <span id="reservationRef"></span>
+        </div>
     `;
 
     form.innerHTML = formHtml;
 
-    // Image upload handling
-    /* Image upload handling removed */
-
     // Total Amount Calculation
     const sharesInput = document.getElementById('shares');
-    const totalInput = document.getElementById('totalAmount');
+    const totalAmountInput = document.getElementById('totalAmount');
+    const totalAmountDisplay = document.getElementById('totalAmountDisplay');
 
-    sharesInput.addEventListener('input', (e) => {
-        const val = parseInt(e.target.value);
-        if (!isNaN(val) && val > 0) {
-            // Use dynamic price from state
-            const total = (val * state.settings.sharePrice);
-            document.getElementById('totalAmountDisplay').textContent = total.toLocaleString();
-            document.getElementById('totalAmount').value = total;
-        } else {
-            document.getElementById('totalAmountDisplay').textContent = "0";
-            document.getElementById('totalAmount').value = "0";
-        }
-    });
+    if (sharesInput) {
+        sharesInput.addEventListener('input', (e) => {
+            const shares = parseInt(e.target.value) || 0;
+            const total = shares * state.settings.sharePrice;
+            totalAmountInput.value = total;
+            totalAmountDisplay.textContent = total.toLocaleString();
+        });
+    }
 
-    // Form submission
     form.addEventListener('submit', handleReservation);
 }
 
-// === RESERVATION HANDLING ===
+// === FORM HANDLING ===
 async function handleReservation(e) {
     e.preventDefault();
-
-    if (!state.settings.roundOpen) {
-        alert('الجولة مغلقة حالياً');
-        return;
-    }
-
-    const form = e.target;
     const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('reservationForm');
 
-    const fullName = document.getElementById('fullName').value.trim();
-    // const email = document.getElementById('email').value.trim(); // Removed
+    // Disable button
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    // Get Data
+    const formData = new FormData(form);
+    const shares = parseInt(formData.get('shares'));
+    const fullName = formData.get('fullName');
     const countryCode = document.getElementById('countryCode').value;
-    const phoneBody = document.getElementById('phone').value.trim();
+    const phoneBody = document.getElementById('phone').value;
     const phone = `${countryCode} ${phoneBody}`;
-    const shares = parseInt(document.getElementById('shares').value);
-    const privacy = document.querySelector('input[name="privacy"]:checked')?.value;
-    // Image removed
+    const privacy = document.querySelector('input[name="privacy"]:checked').value;
 
     // Validation
     if (!fullName || !phoneBody || !shares || !privacy) {
         alert('يرجى ملء جميع الحقول المطلوبة');
-        return;
-    }
-
-    if (shares > getRemainingShares()) {
-        alert(`عدد الأسهم المطلوبة (${shares}) أكبر من المتاح (${getRemainingShares()})`);
-        return;
-    }
-
-    // Check for duplicate phone (instead of email)
-    if (state.reservations.some(r => r.phone === phone && r.visible)) {
-        alert('رقم الهاتف مسجل مسبقاً');
-        return;
-    }
-
-    // Show loading
-    submitBtn.classList.add('loading');
-    submitBtn.disabled = true;
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Create reservation
-    const reservation = {
-        id: generateId(),
-        fullName,
-        email: "", // Removed
-        phone,
-        shares,
-        privacy,
-        image: null,
-        visible: true,
-        timestamp: new Date().toISOString()
-    };
-
-    state.reservations.push(reservation);
-
-    // Add activity
-    addActivity('reservation', shares);
-
-    saveState();
-    updateDisplay();
-
-    // Show success
-    submitBtn.classList.remove('loading');
-    form.style.display = 'none';
-
-    const successMsg = document.getElementById('successMessage');
-    document.getElementById('reservationRef').textContent = reservation.id;
-    successMsg.classList.add('show');
-
-    // Reset form after delay
-    setTimeout(() => {
-        form.reset();
-        // Image preview reset removed
-        form.style.display = 'flex';
-        successMsg.classList.remove('show');
+        submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
-    }, 5000);
-}
+        return;
+    }
 
-// === DISPLAY UPDATES ===
-function updateDisplay() {
-    const total = state.settings.totalShares;
-    const reserved = getReservedShares();
     const remaining = getRemainingShares();
-    const percentage = Math.round((reserved / total) * 100);
-
-    // Update stats
-    document.getElementById('totalShares').textContent = total.toLocaleString();
-    document.getElementById('reservedShares').textContent = reserved.toLocaleString();
-    document.getElementById('remainingShares').textContent = remaining.toLocaleString();
-    // document.getElementById('fillPercentage').textContent = percentage; // Removed
-    const sharePriceDisplay = document.getElementById('sharePriceDisplay');
-    if (sharePriceDisplay) sharePriceDisplay.textContent = state.settings.sharePrice;
-
-    document.getElementById('progressPercent').textContent = percentage + '%';
-
-    // Update progress bar
-    const progressBar = document.getElementById('progressBar');
-    progressBar.style.width = percentage + '%';
-
-    // Change color based on percentage
-    if (percentage >= 90) {
-        progressBar.style.background = 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)';
-    } else if (percentage >= 70) {
-        progressBar.style.background = 'linear-gradient(135deg, #f59e0b 0%, #eab308 100%)';
-    } else {
-        progressBar.style.background = 'var(--gradient-1)';
-    }
-
-    // Update available hint
-    const availableHint = document.getElementById('availableHint');
-    if (availableHint) availableHint.textContent = remaining.toLocaleString();
-
-    // Update last update time
-    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('ar-EG');
-
-    // Update participants display
-    updateParticipantsDisplay();
-
-    // Update activity feed
-    updateActivityFeed();
-}
-
-function updateParticipantsDisplay() {
-    const grid = document.getElementById('participantsGrid');
-    const noParticipants = document.getElementById('noParticipants');
-
-    const visibleParticipants = state.reservations.filter(r =>
-        r.visible && r.privacy !== 'anonymous' &&
-        (state.settings.displayMode === 'full' || state.settings.displayMode !== 'numbers')
-    );
-
-    if (visibleParticipants.length === 0 || state.settings.displayMode === 'numbers') {
-        grid.innerHTML = '';
-        noParticipants.style.display = 'block';
+    if (shares > remaining) {
+        alert(`عذراً، المتبقي فقط ${remaining} سهم`);
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
         return;
     }
 
-    noParticipants.style.display = 'none';
+    try {
+        const { data, error } = await supabase
+            .from('reservations')
+            .insert([{
+                full_name: fullName,
+                phone: phone,
+                shares: shares,
+                privacy: privacy,
+                visible: true
+            }])
+            .select()
+            .single();
 
-    grid.innerHTML = visibleParticipants.map(p => {
-        const displayName = p.privacy === 'firstName'
-            ? p.fullName.split(' ')[0]
-            : p.fullName;
+        if (error) throw error;
 
-        const showImage = p.privacy === 'full' && p.image && state.settings.displayMode === 'full';
-        const initial = p.fullName.charAt(0);
+        // Show success
+        submitBtn.classList.remove('loading');
+        form.style.display = 'none';
 
-        return `
-            <div class="participant-card" title="${p.shares} سهم">
-                <div class="participant-avatar">
-                    ${showImage ? `<img src="${p.image}" alt="${displayName}">` : initial}
-                </div>
-                <div class="participant-name">${displayName}</div>
-                <div class="participant-shares">${p.shares} سهم</div>
-            </div>
-        `;
-    }).join('');
-}
+        const successMsg = document.getElementById('successMessage');
+        document.getElementById('reservationRef').textContent = data.id.slice(0, 8); // Short ID
+        successMsg.classList.add('show');
 
-function updateActivityFeed() {
-    const feed = document.getElementById('activityFeed');
+        // Reset form after delay
+        setTimeout(() => {
+            form.reset();
+            form.style.display = 'flex';
+            successMsg.classList.remove('show');
+            submitBtn.disabled = false;
+        }, 5000);
 
-    if (state.activities.length === 0) {
-        feed.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">لا يوجد نشاط حالياً</p>';
-        return;
+    } catch (error) {
+        console.error('Reservation error:', error);
+        alert('حدث خطأ أثناء الاتصال بالخادم. حاول مرة أخرى.');
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
     }
-
-    const recentActivities = state.activities.slice(-10).reverse();
-
-    feed.innerHTML = recentActivities.map(a => `
-        <div class="activity-item">
-            <span class="activity-icon">${a.type === 'reservation' ? '📈' : '👤'}</span>
-            <span class="activity-text">${a.message}</span>
-            <span class="activity-time">${formatTime(a.timestamp)}</span>
-        </div>
-    `).join('');
-}
-
-// === ADMIN PANEL ===
-function initializeAdminPanel() {
-    const adminBtn = document.getElementById('adminBtn');
-    const adminModal = document.getElementById('adminModal');
-    const closeBtn = document.getElementById('closeAdminModal');
-    const loginForm = document.getElementById('adminLoginForm');
-
-    adminBtn.addEventListener('click', () => {
-        adminModal.classList.add('show');
-    });
-
-    closeBtn.addEventListener('click', () => {
-        adminModal.classList.remove('show');
-        resetAdminPanel();
-    });
-
-    adminModal.addEventListener('click', (e) => {
-        if (e.target === adminModal) {
-            adminModal.classList.remove('show');
-            resetAdminPanel();
-        }
-    });
-
-    loginForm.addEventListener('submit', handleAdminLogin);
-
-    // Initialize admin dashboard
-    initializeAdminDashboard();
-}
-
-function handleAdminLogin(e) {
-    e.preventDefault();
-    const password = document.getElementById('adminPassword').value;
-    const errorMsg = document.getElementById('loginError');
-
-    if (password === CONFIG.adminPassword) {
-        document.getElementById('adminLogin').style.display = 'none';
-        document.getElementById('adminDashboard').classList.add('show');
-        loadAdminData();
-    } else {
-        errorMsg.classList.add('show');
-        setTimeout(() => errorMsg.classList.remove('show'), 3000);
-    }
-}
-
-function initializeAdminDashboard() {
-    const dashboard = document.getElementById('adminDashboard');
-
-    dashboard.innerHTML = `
-        <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="settings">الإعدادات</button>
-            <button class="admin-tab" data-tab="reservations">الحجوزات</button>
-            <button class="admin-tab" data-tab="display">خيارات العرض</button>
-        </div>
-        
-        <div class="tab-content active" id="settingsTab">
-            <div class="settings-grid">
-                <div class="setting-card">
-                    <h4>إجمالي الأسهم</h4>
-                    <input type="number" id="adminTotalShares" min="1" value="${state.settings.totalShares}">
-                    <button class="save-setting" onclick="updateTotalShares()">حفظ</button>
-                </div>
-                <div class="setting-card">
-                    <h4>سعر السهم ($)</h4>
-                    <input type="number" id="adminSharePrice" min="1" value="${state.settings.sharePrice}">
-                    <button class="save-setting" onclick="updateSharePrice()">حفظ</button>
-                </div>
-                <div class="setting-card">
-                    <h4>حالة الجولة</h4>
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="roundStatus" ${state.settings.roundOpen ? 'checked' : ''} onchange="toggleRoundStatus()">
-                        <label for="roundStatus">
-                            <span class="toggle-on">مفتوحة</span>
-                            <span class="toggle-off">مغلقة</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="setting-card">
-                    <h4>السماح برفع الصور</h4>
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="allowImages" ${state.settings.allowImages ? 'checked' : ''} onchange="toggleAllowImages()">
-                        <label for="allowImages">
-                            <span class="toggle-on">مفعّل</span>
-                            <span class="toggle-off">معطّل</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="reservationsTab">
-            <div class="reservations-actions">
-                <button class="action-btn" onclick="exportToCSV()">📥 تحميل CSV</button>
-                <button class="action-btn danger" onclick="clearAllReservations()">🗑️ مسح الكل</button>
-            </div>
-            <div class="reservations-table-wrapper">
-                <table class="reservations-table">
-                    <thead>
-                        <tr>
-                            <th>الاسم</th>
-                            <!-- <th>البريد</th> -->
-                            <th>الهاتف</th>
-                            <th>الأسهم</th>
-                            <th>الخصوصية</th>
-                            <th>الحالة</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reservationsTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="displayTab">
-            <div class="display-options">
-                <h4>وضع العرض الافتراضي</h4>
-                <div class="display-modes">
-                    <label class="display-mode">
-                        <input type="radio" name="displayMode" value="numbers" ${state.settings.displayMode === 'numbers' ? 'checked' : ''} onchange="updateDisplayMode('numbers')">
-                        <span class="mode-content">
-                            <span class="mode-icon">📊</span>
-                            <span class="mode-text"><span class="mode-title">أرقام فقط</span><span class="mode-desc">عرض الإحصائيات بدون أسماء</span></span>
-                        </span>
-                    </label>
-                    <label class="display-mode">
-                        <input type="radio" name="displayMode" value="anonymous" ${state.settings.displayMode === 'anonymous' ? 'checked' : ''} onchange="updateDisplayMode('anonymous')">
-                        <span class="mode-content">
-                            <span class="mode-icon">🔒</span>
-                            <span class="mode-text"><span class="mode-title">النشاط المجهول</span><span class="mode-desc">إشعارات بدون معلومات شخصية</span></span>
-                        </span>
-                    </label>
-                    <label class="display-mode">
-                        <input type="radio" name="displayMode" value="full" ${state.settings.displayMode === 'full' ? 'checked' : ''} onchange="updateDisplayMode('full')">
-                        <span class="mode-content">
-                            <span class="mode-icon">🌟</span>
-                            <span class="mode-text"><span class="mode-title">الأسماء والصور</span><span class="mode-desc">عرض كامل للمشاركين</span></span>
-                        </span>
-                    </label>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Tab switching
-    document.querySelectorAll('.admin-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
-        });
-    });
-}
-
-function loadAdminData() {
-    updateReservationsTable();
-}
-
-function updateReservationsTable() {
-    const tbody = document.getElementById('reservationsTableBody');
-    if (!tbody) return;
-
-    const privacyLabels = { anonymous: 'مجهول', firstName: 'الاسم الأول', full: 'كامل' };
-
-    tbody.innerHTML = state.reservations.map(r => `
-        <tr>
-            <td>${r.fullName}</td>
-            <!-- <td>${r.email}</td> -->
-            <td>${r.phone}</td>
-            <td>${r.shares}</td>
-            <td>${privacyLabels[r.privacy]}</td>
-            <td>${r.visible ? '✅ ظاهر' : '❌ مخفي'}</td>
-            <td>
-                <button onclick="toggleVisibility('${r.id}')" style="padding:5px 10px;margin:2px;border-radius:5px;border:none;cursor:pointer;background:${r.visible ? '#f59e0b' : '#10b981'};color:white;">
-                    ${r.visible ? 'إخفاء' : 'إظهار'}
-                </button>
-                <button onclick="deleteReservation('${r.id}')" style="padding:5px 10px;margin:2px;border-radius:5px;border:none;cursor:pointer;background:#ef4444;color:white;">
-                    حذف
-                </button>
-            </td>
-        </tr>
-    `).join('');
 }
 
 // === ADMIN ACTIONS ===
-function updateTotalShares() {
-    const value = parseInt(document.getElementById('adminTotalShares').value);
-    if (value > 0) {
-        state.settings.totalShares = value;
-        saveState();
-        updateDisplay();
-        alert('تم تحديث إجمالي الأسهم');
+async function toggleRoundStatus() {
+    const newState = !state.settings.isRoundOpen;
+    try {
+        await supabase
+            .from('settings')
+            .update({ is_round_open: newState })
+            .gt('id', 0);
+    } catch (e) { console.error(e); }
+}
+
+async function updateSettings(e) {
+    if (e) e.preventDefault();
+
+    // Get values from admin inputs
+    const totalShares = parseInt(document.getElementById('adminTotalShares').value);
+    const sharePrice = parseInt(document.getElementById('adminSharePrice').value);
+
+    try {
+        await supabase
+            .from('settings')
+            .update({
+                total_shares: totalShares,
+                share_price: sharePrice
+            })
+            .gt('id', 0); // Update all settings row
+
+        alert('تم حفظ الإعدادات');
+    } catch (err) {
+        alert('خطأ في الحفظ');
+        console.error(err);
     }
 }
 
-function updateSharePrice() {
-    const value = parseInt(document.getElementById('adminSharePrice').value);
-    if (value > 0) {
-        state.settings.sharePrice = value;
-        saveState();
-        updateDisplay();
+async function toggleReservationVisibility(id, currentStatus) {
+    try {
+        // Find current status locally first to be responsive, or use passed arg
+        // But for reliable toggle, we use the argument if passed, or negate visible.
+        // Assuming currentStatus is boolean.
 
-        // Refresh form calculation validation if needed
-        const sharesInput = document.getElementById('shares');
-        if (sharesInput && sharesInput.value) {
-            sharesInput.dispatchEvent(new Event('input'));
+        let newStatus = !currentStatus;
+        if (currentStatus === undefined || currentStatus === null) {
+            // Find in state
+            const r = state.reservations.find(re => re.id == id);
+            if (r) newStatus = !r.visible;
         }
 
-        alert('تم تحديث سعر السهم');
+        await supabase
+            .from('reservations')
+            .update({ visible: newStatus })
+            .eq('id', id);
+    } catch (e) { console.error(e); }
+}
+
+async function deleteReservation(id) {
+    if (!confirm('هل أنت متأكد من الحذف؟')) return;
+    try {
+        await supabase
+            .from('reservations')
+            .delete()
+            .eq('id', id);
+    } catch (e) { console.error(e); }
+}
+
+
+// === HELPER FUNCTIONS ===
+function getRemainingShares() {
+    const reserved = state.reservations.reduce((acc, curr) => acc + curr.shares, 0);
+    return state.settings.totalShares - reserved;
+}
+
+// === UI UPDATES ===
+function updateDisplay() {
+    // 1. Update Progress
+    const reserved = state.reservations.reduce((acc, curr) => acc + curr.shares, 0);
+    const remaining = Math.max(0, state.settings.totalShares - reserved);
+    const progress = Math.min(100, (reserved / state.settings.totalShares) * 100);
+
+    document.getElementById('totalShares').textContent = state.settings.totalShares.toLocaleString();
+
+    // Update progress bars with animation
+    const progressFill = document.querySelector('.progress-fill');
+    const heroProgressFill = document.querySelector('.hero-progress-fill');
+
+    if (progressFill) progressFill.style.width = `${progress}%`;
+    if (heroProgressFill) heroProgressFill.style.width = `${progress}%`;
+
+    // Counts
+    document.getElementById('investorsCount').textContent = state.reservations.length;
+    document.getElementById('reservedShares').textContent = reserved.toLocaleString();
+
+    // Values
+    const raised = reserved * state.settings.sharePrice;
+    document.getElementById('raisedAmount').textContent = '$' + raised.toLocaleString();
+
+    // Available hint in form
+    const hintEl = document.getElementById('availableHint');
+    if (hintEl) hintEl.textContent = remaining;
+
+    // 2. Update Participants Grid
+    renderParticipants();
+
+    // 3. Update Admin Tables if visible
+    if (document.querySelector('.admin-dashboard').classList.contains('show')) {
+        renderAdminReservations();
+    }
+
+    // 4. Update Settings Inputs check
+    const totalSharesInput = document.getElementById('adminTotalShares');
+    // Only update if not focused to avoid interfering with typing
+    if (totalSharesInput && document.activeElement !== totalSharesInput) {
+        totalSharesInput.value = state.settings.totalShares;
+    }
+    const sharePriceInput = document.getElementById('adminSharePrice');
+    if (sharePriceInput && document.activeElement !== sharePriceInput) {
+        sharePriceInput.value = state.settings.sharePrice;
+    }
+
+    // 5. Hero Badge Status
+    const badge = document.querySelector('.hero-badge');
+    if (badge) {
+        badge.innerHTML = state.settings.isRoundOpen
+            ? '<span class="pulse-dot"></span> جولة مفتوحة الآن'
+            : '<span class="status-dot closed"></span> جولة مغلقة';
+
+        badge.className = state.settings.isRoundOpen ? 'hero-badge' : 'hero-badge closed';
+    }
+
+    // 6. Round Closed Overlay
+    const overlay = document.getElementById('roundClosedOverlay');
+    if (overlay) {
+        if (!state.settings.isRoundOpen) {
+            overlay.classList.add('show');
+        } else {
+            overlay.classList.remove('show');
+        }
     }
 }
 
-function toggleRoundStatus() {
-    state.settings.roundOpen = document.getElementById('roundStatus').checked;
-    saveState();
-    checkRoundStatus();
-}
+function renderParticipants() {
+    const grid = document.getElementById('participantsGrid');
+    if (!grid) return;
 
-function toggleAllowImages() {
-    state.settings.allowImages = document.getElementById('allowImages').checked;
-    saveState();
-    const imageGroup = document.getElementById('imageUploadGroup');
-    if (imageGroup) {
-        imageGroup.style.display = state.settings.allowImages ? 'block' : 'none';
-    }
-}
+    grid.innerHTML = '';
 
-function updateDisplayMode(mode) {
-    state.settings.displayMode = mode;
-    saveState();
-    updateDisplay();
-}
+    // Filter visible ones
+    const visibleReservations = state.reservations.filter(r => r.visible);
 
-function toggleVisibility(id) {
-    const reservation = state.reservations.find(r => r.id === id);
-    if (reservation) {
-        reservation.visible = !reservation.visible;
-        saveState();
-        updateDisplay();
-        updateReservationsTable();
-    }
-}
-
-function deleteReservation(id) {
-    if (confirm('هل أنت متأكد من حذف هذا الحجز؟')) {
-        state.reservations = state.reservations.filter(r => r.id !== id);
-        saveState();
-        updateDisplay();
-        updateReservationsTable();
-    }
-}
-
-function clearAllReservations() {
-    if (confirm('هل أنت متأكد من مسح جميع الحجوزات؟ هذا الإجراء لا يمكن التراجع عنه.')) {
-        state.reservations = [];
-        state.activities = [];
-        saveState();
-        updateDisplay();
-        updateReservationsTable();
-    }
-}
-
-function exportToCSV() {
-    if (state.reservations.length === 0) {
-        alert('لا توجد حجوزات للتصدير');
+    if (visibleReservations.length === 0) {
+        grid.innerHTML = '<div class="no-data">كن أول المبادرين بالحجز!</div>';
         return;
     }
 
-    const headers = ['الاسم', 'الهاتف', 'الأسهم', 'الخصوصية', 'التاريخ'];
-    const rows = state.reservations.map(r => [
-        r.fullName, r.phone, r.shares, r.privacy,
-        new Date(r.timestamp).toLocaleDateString('ar-EG')
-    ]);
+    visibleReservations.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'participant-card';
 
-    const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `reservations_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+        let avatarHtml = '';
+        let nameHtml = '';
+
+        // Handle Privacy Modes
+        if (r.privacy === 'anonymous') {
+            avatarHtml = `<div class="participant-avatar placeholder">?</div>`;
+            nameHtml = `<h3>فاعل خير</h3>`;
+        } else {
+            // Check if name_only
+            const isNameOnly = r.privacy === 'name_only';
+            const initial = r.full_name ? r.full_name.charAt(0) : '?';
+
+            if (isNameOnly) {
+                avatarHtml = `<div class="participant-avatar placeholder">${initial}</div>`;
+            } else {
+                // Full display - using initial for now as image is removed from requirements
+                avatarHtml = `<div class="participant-avatar placeholder" style="background: var(--primary); color: white;">${initial}</div>`;
+            }
+
+            nameHtml = `<h3>${r.full_name || 'فاعل خير'}</h3>`;
+        }
+
+        card.innerHTML = `
+            ${avatarHtml}
+            <div class="participant-info">
+                ${nameHtml}
+                <div class="participant-shares">
+                    <span class="share-icon">🔹</span>
+                    <span>${r.shares} سهم</span>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
-function resetAdminPanel() {
-    document.getElementById('adminLogin').style.display = 'block';
-    document.getElementById('adminDashboard').classList.remove('show');
-    document.getElementById('adminPassword').value = '';
-    document.getElementById('loginError').classList.remove('show');
+function renderAdminReservations() {
+    const tbody = document.getElementById('adminReservationsTable');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    state.reservations.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${r.full_name}</td>
+            <td dir="ltr">${r.phone}</td>
+            <td>${r.shares}</td>
+            <td>${(r.shares * state.settings.sharePrice).toLocaleString()} $</td>
+            <td>
+                <span class="privacy-badge ${r.privacy}">
+                    ${getPivacyLabel(r.privacy)}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button onclick="toggleReservationVisibility('${r.id}', ${r.visible})" class="icon-btn ${r.visible ? '' : 'off'}" title="تغيير الظهور">
+                        👁️
+                    </button>
+                    <button onclick="deleteReservation('${r.id}')" class="icon-btn delete" title="حذف">
+                        🗑️
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
-// === HELPER FUNCTIONS ===
-function getReservedShares() {
-    return state.reservations.filter(r => r.visible).reduce((sum, r) => sum + r.shares, 0);
-}
-
-function getRemainingShares() {
-    return state.settings.totalShares - getReservedShares();
-}
-
-function generateId() {
-    return 'INV-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 4).toUpperCase();
-}
-
-function addActivity(type, shares) {
-    const messages = {
-        reservation: `تم حجز ${shares} سهم الآن`,
-        join: 'انضم مستثمر جديد للجولة'
+function getPivacyLabel(key) {
+    const map = {
+        'full': 'كامل',
+        'name_only': 'اسم فقط',
+        'anonymous': 'مخفي'
     };
-
-    state.activities.push({
-        type,
-        message: messages[type] || messages.join,
-        timestamp: new Date().toISOString()
-    });
+    return map[key] || key;
 }
 
-function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = (now - date) / 1000;
-
-    if (diff < 60) return 'الآن';
-    if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقائق`;
-    if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعات`;
-    return date.toLocaleDateString('ar-EG');
-}
-
-// === SAMPLE DATA ===
-function generateSampleData() {
-    if (state.reservations.length > 0) return;
-
-    const sampleNames = [
-        'أحمد محمد', 'سارة العلي', 'خالد الفهد', 'نورة الحسن',
-        'محمد العمري', 'فاطمة الزهراء', 'عبدالله الشمري'
-    ];
-
-    const privacyOptions = ['anonymous', 'firstName', 'full'];
-
-    sampleNames.forEach((name, i) => {
-        state.reservations.push({
-            id: generateId(),
-            fullName: name,
-            email: "", // user${i + 1}@example.com
-            phone: `+966 5${Math.floor(Math.random() * 100000000)}`,
-            shares: Math.floor(Math.random() * 50) + 10,
-            privacy: privacyOptions[i % 3],
-            image: null,
-            visible: true,
-            timestamp: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString()
-        });
-
-        addActivity('reservation', state.reservations[state.reservations.length - 1].shares);
-    });
-
-    saveState();
+function renderApp() {
+    // Initial Render
     updateDisplay();
+}
+
+function setupEventListeners() {
+    // Admin Login Logic
+    const loginBtn = document.getElementById('adminLoginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const pass = document.getElementById('adminPassword').value;
+            if (pass === '123456') {
+                document.querySelector('.admin-login').style.display = 'none';
+                document.querySelector('.admin-dashboard').classList.add('show');
+                renderAdminReservations();
+            } else {
+                document.querySelector('.login-error').classList.add('show');
+            }
+        });
+    }
+
+    // Modal
+    document.getElementById('adminBtn')?.addEventListener('click', () => {
+        document.getElementById('adminModal').classList.add('show');
+    });
+
+    document.querySelector('.close-modal')?.addEventListener('click', () => {
+        document.getElementById('adminModal').classList.remove('show');
+    });
+
+    // Save Settings
+    document.getElementById('saveSettingsBtn')?.addEventListener('click', updateSettings);
+
+    // Toggle Round
+    document.getElementById('toggleRoundBtn')?.addEventListener('click', toggleRoundStatus);
+
+    // Tabs logic for admin
+    const tabs = document.querySelectorAll('.admin-tab');
+    if (tabs) {
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                e.target.classList.add('active');
+                const target = e.target.dataset.tab;
+                const targetEl = document.getElementById(target);
+                if (targetEl) targetEl.classList.add('active');
+            });
+        });
+    }
 }
