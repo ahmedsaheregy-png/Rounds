@@ -567,14 +567,22 @@ function setupEventListeners() {
     // Admin Login Logic
     const loginBtn = document.getElementById('adminLoginBtn');
     if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            const pass = document.getElementById('adminPassword').value;
+        loginBtn.addEventListener('click', (e) => {
+            if (e) e.preventDefault();
+            const passInput = document.getElementById('adminPassword');
+            const pass = passInput ? passInput.value : '';
+
             if (pass === '123456') {
-                document.querySelector('.admin-login').style.display = 'none';
-                document.querySelector('.admin-dashboard').classList.add('show');
+                const loginDiv = document.querySelector('.admin-login');
+                const dashboardDiv = document.querySelector('.admin-dashboard');
+
+                if (loginDiv) loginDiv.style.display = 'none';
+                if (dashboardDiv) dashboardDiv.classList.add('show');
+
                 renderAdminReservations();
             } else {
-                document.querySelector('.login-error').classList.add('show');
+                const errorDiv = document.querySelector('.login-error');
+                if (errorDiv) errorDiv.classList.add('show');
             }
         });
     }
