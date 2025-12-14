@@ -3,7 +3,8 @@
     --primary: #3b82a1;
     --primary-dark: #2d6a85;
     --primary-light: #5ba3c4;
-    --secondary: #10b981;
+    --secondary: #059669;
+    /* Darker Emerald as requested */
     --accent: #1a1a2e;
     --danger: #ef4444;
     --bg-light: linear-gradient(135deg, #f8fafc 0%, #e8f4f8 50%, #dbeafe 100%);
@@ -15,7 +16,7 @@
     --border: rgba(59, 130, 161, 0.2);
     --shadow: 0 25px 50px -12px rgba(59, 130, 161, 0.15);
     --gradient-1: linear-gradient(135deg, #3b82a1 0%, #5ba3c4 50%, #7ec8e3 100%);
-    --gradient-2: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    --gradient-2: linear-gradient(135deg, #059669 0%, #34d399 100%);
     --font-main: 'Cairo', sans-serif;
 }
 
@@ -316,8 +317,10 @@ select {
     padding: 10px 24px;
     border-radius: 50px;
     color: var(--secondary);
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 24px;
+    font-size: 1.2rem;
+    /* Increased size */
 }
 
 .pulse-dot {
