@@ -125,12 +125,13 @@ select {
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
     z-index: 1000;
-    padding: 16px 0;
-    box-shadow: 0 4px 20px rgba(59, 130, 161, 0.08);
+    padding: 12px 0;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
 }
 
 .main-header .container {
@@ -146,9 +147,11 @@ select {
 }
 
 .logo-img {
-    height: 60px;
+    height: 50px;
     width: auto;
     object-fit: contain;
+    mix-blend-mode: multiply;
+    /* Hides white background of logo */
 }
 
 .logo-icon {
@@ -1589,26 +1592,30 @@ select {
 
 /* === RESPONSIVE === */
 /* === RESPONSIVE === */
+/* === RESPONSIVE === */
 @media (max-width: 768px) {
     .main-header .container {
-        flex-direction: column;
-        gap: 16px;
+        flex-direction: row;
+        /* Keep row on mobile */
+        gap: 12px;
+        justify-content: space-between;
     }
 
     .main-nav {
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
     }
 
     .nav-link {
-        font-size: 0.9rem;
-        padding: 6px 10px;
+        font-size: 0.8rem;
+        padding: 6px 8px;
+        white-space: nowrap;
     }
 
     .admin-btn {
-        padding: 8px 12px;
-        font-size: 0.9rem;
+        display: none;
+        /* Hide admin button in header on mobile since it is in footer */
     }
 
     .hero-section {
