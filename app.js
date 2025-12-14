@@ -395,7 +395,8 @@ function updateDisplay() {
     const remaining = Math.max(0, state.settings.totalShares - reserved);
     const progress = Math.min(100, (reserved / state.settings.totalShares) * 100);
 
-    document.getElementById('totalShares').textContent = state.settings.totalShares.toLocaleString();
+    const totalSharesEl = document.getElementById('totalShares');
+    if (totalSharesEl) totalSharesEl.textContent = state.settings.totalShares.toLocaleString();
 
     // Update progress bars with animation
     const progressFill = document.querySelector('.progress-fill');
@@ -405,12 +406,16 @@ function updateDisplay() {
     if (heroProgressFill) heroProgressFill.style.width = `${progress}%`;
 
     // Counts
-    document.getElementById('investorsCount').textContent = state.reservations.length;
-    document.getElementById('reservedShares').textContent = reserved.toLocaleString();
+    const investorsCountEl = document.getElementById('investorsCount');
+    if (investorsCountEl) investorsCountEl.textContent = state.reservations.length;
+
+    const reservedSharesEl = document.getElementById('reservedShares');
+    if (reservedSharesEl) reservedSharesEl.textContent = reserved.toLocaleString();
 
     // Values
     const raised = reserved * state.settings.sharePrice;
-    document.getElementById('raisedAmount').textContent = '$' + raised.toLocaleString();
+    const raisedAmountEl = document.getElementById('raisedAmount');
+    if (raisedAmountEl) raisedAmountEl.textContent = '$' + raised.toLocaleString();
 
     // Available hint in form
     const hintEl = document.getElementById('availableHint');
@@ -420,7 +425,8 @@ function updateDisplay() {
     renderParticipants();
 
     // 3. Update Admin Tables if visible
-    if (document.querySelector('.admin-dashboard').classList.contains('show')) {
+    const dashboard = document.querySelector('.admin-dashboard');
+    if (dashboard && dashboard.classList.contains('show')) {
         renderAdminReservations();
     }
 
