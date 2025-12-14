@@ -476,11 +476,15 @@ function renderParticipants() {
 
     // Filter visible ones
     const visibleReservations = state.reservations.filter(r => r.visible);
+    const noParticipantsEl = document.getElementById('noParticipants');
 
     if (visibleReservations.length === 0) {
-        grid.innerHTML = '<div class="no-data">كن أول المبادرين بالحجز!</div>';
-        return;
+        if (noParticipantsEl) noParticipantsEl.style.display = 'flex';
+        return; // Grid is already empty
     }
+
+    // Hide empty state if we have data
+    if (noParticipantsEl) noParticipantsEl.style.display = 'none';
 
     visibleReservations.forEach(r => {
         const card = document.createElement('div');
