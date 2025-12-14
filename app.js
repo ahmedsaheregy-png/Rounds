@@ -564,13 +564,18 @@ function renderApp() {
 }
 
 function setupEventListeners() {
-    // Admin Login Logic
-    const loginBtn = document.getElementById('adminLoginBtn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', (e) => {
-            if (e) e.preventDefault();
+    // Admin Login Logic - Listen to form submit to catch Enter key and mobile Go
+    const loginForm = document.getElementById('adminLoginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Stop page reload
+
             const passInput = document.getElementById('adminPassword');
-            const pass = passInput ? passInput.value : '';
+            let pass = passInput ? passInput.value : '';
+
+            // Normalize Arabic/Persian numbers to English
+            pass = pass.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+            pass = pass.trim(); // Remove spaces
 
             if (pass === '123456') {
                 const loginDiv = document.querySelector('.admin-login');
@@ -588,12 +593,20 @@ function setupEventListeners() {
     }
 
     // Modal
-    document.getElementById('adminBtn')?.addEventListener('click', () => {
+    document.getElementById('adminBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
         document.getElementById('adminModal').classList.add('show');
     });
 
     document.querySelector('.close-modal')?.addEventListener('click', () => {
         document.getElementById('adminModal').classList.remove('show');
+    });
+
+    // Close modal on background click
+    document.getElementById('adminModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'adminModal') {
+            e.target.classList.remove('show');
+        }
     });
 
     // Save Settings
