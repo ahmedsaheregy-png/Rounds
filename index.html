@@ -140,7 +140,54 @@
                     <p class="login-error" id="loginError">كلمة المرور غير صحيحة</p>
                 </form>
             </div>
-            <div class="admin-dashboard" id="adminDashboard"></div>
+            <div class="admin-dashboard" id="adminDashboard">
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="reservationsTab">الحجوزات</button>
+                    <button class="admin-tab" data-tab="settingsTab">الإعدادات</button>
+                </div>
+
+                <div id="reservationsTab" class="tab-content active">
+                    <div class="reservations-actions">
+                        <button class="action-btn" id="toggleRoundBtn">
+                            ⏯️ فتح/إغلاق الجولة
+                        </button>
+                    </div>
+                    <div class="reservations-table-wrapper">
+                        <table class="reservations-table">
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>الهاتف</th>
+                                    <th>الأسهم</th>
+                                    <th>المبلغ</th>
+                                    <th>الخصوصية</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminReservationsTable">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="settingsTab" class="tab-content">
+                    <div class="settings-grid">
+                        <div class="setting-card">
+                            <h4>إعدادات الجولة</h4>
+                            <div class="form-group">
+                                <label>العدد الإجمالي للأسهم</label>
+                                <input type="number" id="adminTotalShares">
+                            </div>
+                            <div class="form-group">
+                                <label>سعر السهم ($)</label>
+                                <input type="number" id="adminSharePrice">
+                            </div>
+                            <button id="saveSettingsBtn" class="save-setting">حفظ التغييرات</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
