@@ -62,6 +62,21 @@ function checkRoundStatus() {
 function initializeForm() {
     const form = document.getElementById('reservationForm');
     const formHtml = `
+        <div class="shares-amount-container">
+            <div class="shares-amount-box">
+                <label for="shares">أرغب بحجز عدد الاسهم التالي:</label>
+                <div style="position: relative; max-width: 150px; margin: 0 auto;">
+                    <input type="number" id="shares" name="shares" min="1" required placeholder="0" style="text-align: center; font-size: 1.5rem; padding: 8px; width: 100%;">
+                </div>
+                <span class="available-hint" style="margin-top: 8px; display: block;">متاح: <span id="availableHint">${getRemainingShares()}</span> سهم</span>
+            </div>
+            <div class="shares-amount-box">
+                <label>القيمة الإجمالية</label>
+                <div class="value-display"><span id="totalAmountDisplay">0</span> $</div>
+                <input type="hidden" id="totalAmount" value="0">
+            </div>
+        </div>
+
         <div class="form-grid">
             <div class="form-group">
                 <label for="fullName">الاسم الكامل <span class="required">*</span></label>
@@ -69,29 +84,49 @@ function initializeForm() {
             </div>
             <div class="form-group">
                 <label for="phone">رقم الهاتف <span class="required">*</span></label>
-                <input type="tel" id="phone" name="phone" required placeholder="+966 5XX XXX XXXX">
-            </div>
-            <div class="form-group">
-                <label for="shares">عدد الأسهم <span class="required">*</span></label>
-                <input type="number" id="shares" name="shares" min="1" required placeholder="عدد الأسهم">
-                <span class="available-hint">متاح: <span id="availableHint">${getRemainingShares()}</span> سهم</span>
-            </div>
-            <div class="form-group">
-                <label for="totalAmount">القيمة الإجمالية ($)</label>
-                <input type="text" id="totalAmount" readonly value="0" style="background-color: #f3f4f6; color: var(--primary); font-weight: bold;">
-            </div>
-        </div>
-        
-        <div class="form-group full-width" id="imageUploadGroup">
-            <label for="profileImage">صورة الملف الشخصي (اختياري)</label>
-            <div class="file-upload-wrapper">
-                <input type="file" id="profileImage" name="profileImage" accept="image/*">
-                <div class="file-upload-display">
-                    <div class="upload-icon">📷</div>
-                    <span class="upload-text">اضغط لرفع صورة أو اسحبها هنا</span>
-                    <span class="upload-hint">PNG, JPG حتى 5MB</span>
+                <div class="phone-input-wrapper">
+                    <select id="countryCode" class="country-select" style="width: auto; min-width: 150px;">
+                        <option value="+966">+966 السعودية 🇸🇦</option>
+                        <option value="+971">+971 الإمارات 🇦🇪</option>
+                        <option value="+965">+965 الكويت 🇰🇼</option>
+                        <option value="+974">+974 قطر 🇶🇦</option>
+                        <option value="+973">+973 البحرين 🇧🇭</option>
+                        <option value="+968">+968 عمان 🇴🇲</option>
+                        <option value="+20">+20 مصر 🇪🇬</option>
+                        <option value="+962">+962 الأردن 🇯🇴</option>
+                        <option value="+961">+961 لبنان 🇱🇧</option>
+                        <option value="+964">+964 العراق 🇮🇶</option>
+                        <option value="+212">+212 المغرب 🇲🇦</option>
+                        <option value="+213">+213 الجزائر 🇩🇿</option>
+                        <option value="+216">+216 تونس 🇹🇳</option>
+                        <option value="+249">+249 السودان 🇸🇩</option>
+                        <option value="+218">+218 ليبيا 🇱🇾</option>
+                        <option value="+970">+970 فلسطين 🇵🇸</option>
+                        <option value="+967">+967 اليمن 🇾🇪</option>
+                        <option value="+963">+963 سوريا 🇸🇾</option>
+                        <option value="+252">+252 الصومال 🇸🇴</option>
+                        <option value="+253">+253 جيبوتي 🇩🇯</option>
+                        <option value="+222">+222 موريتانيا 🇲🇷</option>
+                        <option value="+269">+269 جزر القمر 🇰🇲</option>
+                        <option value="+90">+90 تركيا 🇹🇷</option>
+                        <option value="+44">+44 بريطانيا 🇬🇧</option>
+                        <option value="+1">+1 أمريكا 🇺🇸</option>
+                        <option value="+33">+33 فرنسا 🇫🇷</option>
+                        <option value="+49">+49 ألمانيا 🇩🇪</option>
+                        <option value="+39">+39 إيطاليا 🇮🇹</option>
+                        <option value="+34">+34 إسبانيا 🇪🇸</option>
+                        <option value="+7">+7 روسيا 🇷🇺</option>
+                        <option value="+60">+60 ماليزيا 🇲🇾</option>
+                        <option value="+62">+62 إندونيسيا 🇮🇩</option>
+                        <option value="+91">+91 الهند 🇮🇳</option>
+                        <option value="+92">+92 باكستان 🇵🇰</option>
+                        <option value="+1">+1 كندا 🇨🇦</option>
+                        <option value="+61">+61 أستراليا 🇦🇺</option>
+                        <option value="+237">+237 الكاميرون 🇨🇲</option>
+                        <option value="+234">+234 نيجيريا 🇳🇬</option>
+                    </select>
+                    <input type="tel" id="phone" name="phone" required placeholder="5XX XXX XXXX" style="flex: 1;">
                 </div>
-                <img id="imagePreview" class="image-preview" alt="معاينة الصورة">
             </div>
         </div>
         
@@ -121,7 +156,7 @@ function initializeForm() {
                     </span>
                 </label>
                 <label class="privacy-option">
-                    <input type="radio" name="privacy" value="full">
+                    <input type="radio" name="privacy" value="full" checked>
                     <span class="option-content">
                         <span class="custom-radio"></span>
                         <span class="option-icon">🌟</span>
@@ -143,28 +178,7 @@ function initializeForm() {
     form.innerHTML = formHtml;
 
     // Image upload handling
-    const imageInput = document.getElementById('profileImage');
-    const imagePreview = document.getElementById('imagePreview');
-
-    if (!state.settings.allowImages) {
-        document.getElementById('imageUploadGroup').style.display = 'none';
-    }
-
-    imageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                alert('حجم الصورة يجب أن يكون أقل من 5MB');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagePreview.src = e.target.result;
-                imagePreview.classList.add('show');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    /* Image upload handling removed */
 
     // Total Amount Calculation
     const sharesInput = document.getElementById('shares');
@@ -174,9 +188,12 @@ function initializeForm() {
         const val = parseInt(e.target.value);
         if (!isNaN(val) && val > 0) {
             // Use dynamic price from state
-            totalInput.value = (val * state.settings.sharePrice).toLocaleString();
+            const total = (val * state.settings.sharePrice);
+            document.getElementById('totalAmountDisplay').textContent = total.toLocaleString();
+            document.getElementById('totalAmount').value = total;
         } else {
-            totalInput.value = "0";
+            document.getElementById('totalAmountDisplay').textContent = "0";
+            document.getElementById('totalAmount').value = "0";
         }
     });
 
@@ -198,13 +215,15 @@ async function handleReservation(e) {
 
     const fullName = document.getElementById('fullName').value.trim();
     // const email = document.getElementById('email').value.trim(); // Removed
-    const phone = document.getElementById('phone').value.trim();
+    const countryCode = document.getElementById('countryCode').value;
+    const phoneBody = document.getElementById('phone').value.trim();
+    const phone = `${countryCode} ${phoneBody}`;
     const shares = parseInt(document.getElementById('shares').value);
     const privacy = document.querySelector('input[name="privacy"]:checked')?.value;
-    const imagePreview = document.getElementById('imagePreview');
+    // Image removed
 
     // Validation
-    if (!fullName || !phone || !shares || !privacy) {
+    if (!fullName || !phoneBody || !shares || !privacy) {
         alert('يرجى ملء جميع الحقول المطلوبة');
         return;
     }
@@ -235,7 +254,7 @@ async function handleReservation(e) {
         phone,
         shares,
         privacy,
-        image: imagePreview.classList.contains('show') ? imagePreview.src : null,
+        image: null,
         visible: true,
         timestamp: new Date().toISOString()
     };
@@ -259,7 +278,7 @@ async function handleReservation(e) {
     // Reset form after delay
     setTimeout(() => {
         form.reset();
-        imagePreview.classList.remove('show');
+        // Image preview reset removed
         form.style.display = 'flex';
         successMsg.classList.remove('show');
         submitBtn.disabled = false;

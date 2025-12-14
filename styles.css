@@ -149,7 +149,6 @@ select {
     height: 60px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .logo-icon {
@@ -204,7 +203,7 @@ select {
 
 /* === HERO SECTION === */
 .hero-section {
-    padding: 160px 0 80px;
+    padding: 120px 0 40px;
     text-align: center;
 }
 
@@ -258,10 +257,11 @@ select {
 }
 
 .hero-subtitle {
-    font-size: 1.25rem;
+    font-size: 1.8rem;
     color: var(--text-secondary);
-    max-width: 600px;
+    max-width: 900px;
     margin: 0 auto 32px;
+    white-space: nowrap;
 }
 
 .cta-button {
@@ -296,12 +296,12 @@ select {
 
 .section-subtitle {
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: 1.65rem;
 }
 
 /* === OVERVIEW SECTION === */
 .overview-section {
-    padding: 80px 0;
+    padding: 20px 0 80px;
 }
 
 .stats-grid {
@@ -467,6 +467,7 @@ select {
 
 .form-subtitle {
     color: var(--text-secondary);
+    font-size: 1.5rem;
 }
 
 .reservation-form {
@@ -498,6 +499,73 @@ select {
 
 .required {
     color: var(--danger);
+}
+
+.shares-amount-container {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.shares-amount-box {
+    flex: 1;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid var(--primary-light);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.shares-amount-box label {
+    display: block;
+    color: var(--primary-dark);
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.shares-amount-box .value-display {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.phone-input-wrapper {
+    display: flex;
+    gap: 12px;
+}
+
+.country-select {
+    width: 120px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.hero-status-box {
+    margin-top: 32px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 249, 255, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    padding: 20px 60px;
+    border-radius: 50px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    border: 2px solid rgba(59, 130, 161, 0.15);
+    box-shadow: 0 15px 35px rgba(59, 130, 161, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s;
+}
+
+.hero-status-box:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-light);
+    box-shadow: 0 20px 40px rgba(59, 130, 161, 0.15);
 }
 
 .form-group input[type="text"],
@@ -629,7 +697,7 @@ select {
 }
 
 .option-desc {
-    font-size: 0.85rem;
+    font-size: 1.25rem;
     color: var(--text-secondary);
 }
 
