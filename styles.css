@@ -140,11 +140,57 @@ select {
     align-items: center;
 }
 
-.logo-img {
-    height: 70px;
-    /* Optimal size */
-    width: auto;
-    object-fit: contain;
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: default;
+}
+
+.logo-icon-box {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(45deg);
+    box-shadow: 0 4px 15px rgba(59, 130, 161, 0.3);
+}
+
+.logo-initial {
+    color: white;
+    font-weight: 900;
+    font-size: 1.5rem;
+    transform: rotate(-45deg);
+    /* Counter rotate text */
+    font-family: 'Outfit', sans-serif;
+    /* Modern en font */
+}
+
+.logo-text-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1;
+}
+
+.brand-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--secondary);
+    letter-spacing: 2px;
+    margin-top: 2px;
 }
 
 .main-nav {
