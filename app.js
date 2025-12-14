@@ -412,6 +412,9 @@ function updateDisplay() {
     const reservedSharesEl = document.getElementById('reservedShares');
     if (reservedSharesEl) reservedSharesEl.textContent = reserved.toLocaleString();
 
+    const remainingSharesEl = document.getElementById('remainingShares');
+    if (remainingSharesEl) remainingSharesEl.textContent = remaining.toLocaleString();
+
     // Values
     const raised = reserved * state.settings.sharePrice;
     const raisedAmountEl = document.getElementById('raisedAmount');
@@ -436,6 +439,9 @@ function updateDisplay() {
     if (totalSharesInput && document.activeElement !== totalSharesInput) {
         totalSharesInput.value = state.settings.totalShares;
     }
+    const sharePriceDisplayEl = document.getElementById('sharePriceDisplay');
+    if (sharePriceDisplayEl) sharePriceDisplayEl.textContent = state.settings.sharePrice;
+
     const sharePriceInput = document.getElementById('adminSharePrice');
     if (sharePriceInput && document.activeElement !== sharePriceInput) {
         sharePriceInput.value = state.settings.sharePrice;

@@ -121,16 +121,16 @@ select {
 }
 
 /* === HEADER === */
+/* === HEADER === */
 .main-header {
-    position: fixed;
+    position: absolute;
+    /* Changed from fixed to absolute to prevent overlaying content on scroll */
     top: 0;
     left: 0;
     right: 0;
     background: transparent;
-    /* No background as requested */
     z-index: 1000;
     padding: 24px 0;
-    /* Removed shadow and border for clean look */
 }
 
 .main-header .container {
