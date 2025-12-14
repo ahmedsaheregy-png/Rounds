@@ -135,17 +135,50 @@ select {
 
 .main-header .container {
     display: flex;
-    justify-content: center;
-    /* Center the logo */
+    justify-content: space-between;
+    /* Restore spacing */
     align-items: center;
 }
 
 .logo-img {
-    height: 80px;
-    /* Made bigger */
+    height: 70px;
+    /* Optimal size */
     width: auto;
     object-fit: contain;
-    /* mix-blend-mode removed */
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 8px 0;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
 }
 
 /* ... existing code ... */
