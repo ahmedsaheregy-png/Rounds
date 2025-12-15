@@ -399,11 +399,11 @@ function updateDisplay() {
     if (totalSharesEl) totalSharesEl.textContent = state.settings.totalShares.toLocaleString();
 
     // Update progress bars with animation
-    const progressFill = document.querySelector('.progress-fill');
-    const heroProgressFill = document.querySelector('.hero-progress-fill');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
 
-    if (progressFill) progressFill.style.width = `${progress}%`;
-    if (heroProgressFill) heroProgressFill.style.width = `${progress}%`;
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (progressPercent) progressPercent.textContent = `${Math.round(progress)}%`;
 
     // Counts
     const investorsCountEl = document.getElementById('investorsCount');
