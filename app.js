@@ -147,7 +147,7 @@ function initializeForm() {
             <div class="form-group">
                 <label for="phone">رقم الهاتف <span class="required">*</span></label>
                 <div class="phone-input-wrapper">
-                    <select id="countryCode" class="country-select" style="width: auto; min-width: 150px;">
+                    <select id="countryCode" class="country-select">
                         <option value="+966">+966 السعودية 🇸🇦</option>
                         <option value="+971">+971 الإمارات 🇦🇪</option>
                         <option value="+965">+965 الكويت 🇰🇼</option>
@@ -196,22 +196,28 @@ function initializeForm() {
                     <label class="privacy-option">
                         <input type="radio" name="privacy" value="full" checked>
                         <span class="option-content">
-                            <span class="option-title">عرض الاسم + الصورة الشخصية</span>
-                            <span class="option-desc">سيظهر اسمك وصورتك في قائمة المؤسيين (نوصي بهذا الاختيار للتعارف وتشجيع باقي الزملاء)</span>
+                            <span class="option-text">
+                                <span class="option-title">عرض الاسم + الصورة الشخصية</span>
+                                <span class="option-desc">سيظهر اسمك وصورتك في قائمة المؤسيين (نوصي بهذا الاختيار للتعارف وتشجيع باقي الزملاء)</span>
+                            </span>
                         </span>
                     </label>
                     <label class="privacy-option">
                         <input type="radio" name="privacy" value="name_only">
                         <span class="option-content">
-                            <span class="option-title">عرض الاسم فقط</span>
-                            <span class="option-desc">يظهر اسمك فقط ويتم إخفاء صورتك</span>
+                            <span class="option-text">
+                                <span class="option-title">عرض الاسم فقط</span>
+                                <span class="option-desc">يظهر اسمك فقط ويتم إخفاء صورتك</span>
+                            </span>
                         </span>
                     </label>
                     <label class="privacy-option">
                         <input type="radio" name="privacy" value="anonymous">
                         <span class="option-content">
-                            <span class="option-title">فاعل خير (مخفي)</span>
-                            <span class="option-desc">لا يظهر اسمك ولا صورتك في القائمة</span>
+                            <span class="option-text">
+                                <span class="option-title">فاعل خير (مخفي)</span>
+                                <span class="option-desc">لا يظهر اسمك ولا صورتك في القائمة</span>
+                            </span>
                         </span>
                     </label>
                 </div>
@@ -222,6 +228,9 @@ function initializeForm() {
         <div class="success-message" id="successMessage">
             تم الحجز بنجاح! رقم طلبك: <span id="reservationRef"></span>
         </div>
+        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; color: var(--text-secondary);">
+            لتعديل أو إلغاء الحجز، يرجى التواصل مع الإدارة مباشرة.
+        </p>
     `;
 
     form.innerHTML = formHtml;

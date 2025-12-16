@@ -1781,7 +1781,23 @@ select {
     }
 
     .form-wrapper {
-        padding: 24px;
+        padding: 16px;
+    }
+
+    .option-desc {
+        font-size: 0.95rem;
+        /* Smaller on mobile */
+    }
+
+    .privacy-options {
+        width: 100%;
+    }
+
+    .option-content {
+        padding: 12px;
+        /* Reduce padding */
+        white-space: normal;
+        /* Ensure wrap */
     }
 
     .logo-img {
