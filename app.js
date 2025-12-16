@@ -626,17 +626,19 @@ function renderParticipants() {
             nameHtml = `<h3>${r.full_name || 'فاعل خير'}</h3>`;
         }
 
-        // Special Case for Ibrahim Al-As
-        if (r.full_name && r.full_name.includes('ابراهيم العص')) {
-            if (!r.avatar_url) {
-                // Use the known image URL
-                const ibrahimImg = 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg';
-                avatarHtml = `<img src="${ibrahimImg}" class="participant-avatar" alt="${r.full_name}">`;
+        // --- SPECIAL VIP OVERRIDES ---
+        const vips = {
+            'ابراهيم العص': 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg', // Ibrahim Al-As
+            'صهيب درع': 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg',   // Suhaib Daraa
+            'كاوا جوي': 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg'      // Kawa Joy
+        };
 
-                // Auto-fix in DB (Fire and forget)
-                supabase.from('reservations').update({ avatar_url: ibrahimImg }).eq('id', r.id).then(() => { });
+        for (const [namePart, imgUrl] of Object.entries(vips)) {
+            if (r.full_name && r.full_name.includes(namePart)) {
+                if (!r.avatar_url || r.avatar_url !== imgUrl) {
+                    avatarHtml = `<img src="${imgUrl}" class="participant-avatar" alt="${r.full_name}">`;
+                }
             }
-            nameHtml = `<h3 style="text-decoration: underline;">${r.full_name}</h3>`;
         }
 
         card.innerHTML = `
