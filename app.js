@@ -626,6 +626,19 @@ function renderParticipants() {
             nameHtml = `<h3>${r.full_name || 'فاعل خير'}</h3>`;
         }
 
+        // Special Case for Ibrahim Al-As
+        if (r.full_name && r.full_name.includes('ابراهيم العص')) {
+            if (!r.avatar_url) {
+                // Use the known image URL
+                const ibrahimImg = 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg';
+                avatarHtml = `<img src="${ibrahimImg}" class="participant-avatar" alt="${r.full_name}">`;
+
+                // Auto-fix in DB (Fire and forget)
+                supabase.from('reservations').update({ avatar_url: ibrahimImg }).eq('id', r.id).then(() => { });
+            }
+            nameHtml = `<h3 style="text-decoration: underline;">${r.full_name}</h3>`;
+        }
+
         card.innerHTML = `
             ${avatarHtml}
             <div class="participant-info">
