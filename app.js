@@ -558,6 +558,9 @@ function renderAdminReservations() {
                     <button onclick="toggleReservationVisibility('${r.id}', ${r.visible})" class="icon-btn ${r.visible ? '' : 'off'}" title="تغيير الظهور">
                         👁️
                     </button>
+                    <button onclick="editReservation('${r.id}', ${r.shares})" class="icon-btn edit" title="تعديل الأسهم">
+                        ✏️
+                    </button>
                     <button onclick="deleteReservation('${r.id}')" class="icon-btn delete" title="حذف">
                         🗑️
                     </button>
