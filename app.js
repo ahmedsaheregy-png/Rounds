@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.supabase) {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             await initApp();
+            setupFileUploadListener(); // Initialize upload listener
         } else {
             console.error("Supabase library not loaded");
             alert("فشل تحميل المكتبات اللازمة");
@@ -398,28 +399,78 @@ async function editReservation(id, currentShares) {
 
         if (error) throw error;
         // Realtime subscription will update the UI
+
+
     } catch (e) {
         console.error(e);
         alert('حدث خطأ أثناء التعديل');
     }
 }
 
+// Image Upload State
+let currentUploadId = null;
+
 async function updateReservationImage(id) {
-    const imageUrl = prompt('أدخل رابط الصورة (أو مسار الملف assets/name.jpg):');
-    if (imageUrl === null) return; // Cancelled
+    currentUploadId = id;
+    const input = document.getElementById('adminImageUpload');
+    if (input) input.click();
+}
 
-    try {
-        const { error } = await supabase
-            .from('reservations')
-            .update({ avatar_url: imageUrl })
-            .eq('id', id);
+function setupFileUploadListener() {
+    const input = document.getElementById('adminImageUpload');
+    if (!input) return;
 
-        if (error) throw error;
-        // Realtime subscription will update the UI
-    } catch (e) {
-        console.error(e);
-        alert('حدث خطأ أثناء تحديث الصورة (تأكد من وجود عمود avatar_url)');
-    }
+    input.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file || !currentUploadId) return;
+
+        // Reset input so same file can be selected again
+        input.value = '';
+
+        try {
+            // Show loading or visual feedback if possible (alert for now)
+            const oldLabel = document.body.style.cursor;
+            document.body.style.cursor = 'wait';
+
+            // 1. Upload to Supabase Storage 'avatars' bucket
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${currentUploadId}_${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { data, error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+            if (uploadError) {
+                if (uploadError.message.includes('bucket not found')) {
+                    throw new Error('لم يتم العثور على سلة التخزين "avatars". يرجى إنشاؤها في Supabase.');
+                }
+                throw uploadError;
+            }
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // 3. Update Record
+            const { error: dbError } = await supabase
+                .from('reservations')
+                .update({ avatar_url: publicUrl })
+                .eq('id', currentUploadId);
+
+            if (dbError) throw dbError;
+
+            alert('تم تحديث الصورة بنجاح');
+
+        } catch (error) {
+            console.error('Upload Error:', error);
+            alert('فشل رفع الصورة: ' + error.message);
+        } finally {
+            document.body.style.cursor = 'default';
+            currentUploadId = null;
+        }
+    });
 }
 
 async function deleteReservation(id) {
