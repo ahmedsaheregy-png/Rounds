@@ -404,6 +404,24 @@ async function editReservation(id, currentShares) {
     }
 }
 
+async function updateReservationImage(id) {
+    const imageUrl = prompt('أدخل رابط الصورة (أو مسار الملف assets/name.jpg):');
+    if (imageUrl === null) return; // Cancelled
+
+    try {
+        const { error } = await supabase
+            .from('reservations')
+            .update({ avatar_url: imageUrl })
+            .eq('id', id);
+
+        if (error) throw error;
+        // Realtime subscription will update the UI
+    } catch (e) {
+        console.error(e);
+        alert('حدث خطأ أثناء تحديث الصورة (تأكد من وجود عمود avatar_url)');
+    }
+}
+
 async function deleteReservation(id) {
     if (!confirm('هل أنت متأكد من الحذف؟')) return;
     try {
@@ -538,8 +556,12 @@ function renderParticipants() {
             if (isNameOnly) {
                 avatarHtml = `<div class="participant-avatar placeholder">${initial}</div>`;
             } else {
-                // Full display - using initial for now as image is removed from requirements
-                avatarHtml = `<div class="participant-avatar placeholder" style="background: var(--primary); color: white;">${initial}</div>`;
+                // Full display
+                if (r.avatar_url) {
+                    avatarHtml = `<img src="${r.avatar_url}" class="participant-avatar" alt="${r.full_name}">`;
+                } else {
+                    avatarHtml = `<div class="participant-avatar placeholder" style="background: var(--primary); color: white;">${initial}</div>`;
+                }
             }
 
             nameHtml = `<h3>${r.full_name || 'فاعل خير'}</h3>`;
@@ -584,6 +606,9 @@ function renderAdminReservations() {
                     </button>
                     <button onclick="editReservation('${r.id}', ${r.shares})" class="icon-btn edit" title="تعديل الأسهم">
                         ✏️
+                    </button>
+                    <button onclick="updateReservationImage('${r.id}')" class="icon-btn image" title="تغيير الصورة">
+                        📷
                     </button>
                     <button onclick="deleteReservation('${r.id}')" class="icon-btn delete" title="حذف">
                         🗑️
