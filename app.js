@@ -321,79 +321,79 @@ async function handleReservation(e) {
         return;
     }
 
-}
 
-// Upload Image if selected
-let avatarUrl = null;
-const fileInput = document.getElementById('userAvatar');
 
-if (fileInput && fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    try {
-        submitBtn.textContent = 'جاري رفع الصورة...';
+    // Upload Image if selected
+    let avatarUrl = null;
+    const fileInput = document.getElementById('userAvatar');
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-        const filePath = `${fileName}`;
+    if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        try {
+            submitBtn.textContent = 'جاري رفع الصورة...';
 
-        const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, file);
+            const fileExt = file.name.split('.').pop();
+            const fileName = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+            const filePath = `${fileName}`;
 
-        if (uploadError) throw uploadError;
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
 
-        const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
+            if (uploadError) throw uploadError;
 
-        avatarUrl = publicUrl;
-    } catch (error) {
-        console.error('Image upload failed:', error);
-        alert('فشل رفع الصورة، سيتم الحجز بدون صورة.');
-        // Continue without image or return? changing text back
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            avatarUrl = publicUrl;
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            alert('فشل رفع الصورة، سيتم الحجز بدون صورة.');
+            // Continue without image or return? changing text back
+        }
     }
-}
 
-submitBtn.textContent = 'جاري الحجز...';
+    submitBtn.textContent = 'جاري الحجز...';
 
-try {
-    const { data, error } = await supabase
-        .from('reservations')
-        .insert([{
-            full_name: fullName,
-            phone: phone,
-            shares: shares,
-            privacy: privacy,
-            avatar_url: avatarUrl,
-            visible: true
-        }])
-        .select()
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('reservations')
+            .insert([{
+                full_name: fullName,
+                phone: phone,
+                shares: shares,
+                privacy: privacy,
+                avatar_url: avatarUrl,
+                visible: true
+            }])
+            .select()
+            .single();
 
-    if (error) throw error;
+        if (error) throw error;
 
-    // Show success
-    submitBtn.classList.remove('loading');
-    form.style.display = 'none';
+        // Show success
+        submitBtn.classList.remove('loading');
+        form.style.display = 'none';
 
-    const successMsg = document.getElementById('successMessage');
-    document.getElementById('reservationRef').textContent = data.id.slice(0, 8); // Short ID
-    successMsg.classList.add('show');
+        const successMsg = document.getElementById('successMessage');
+        document.getElementById('reservationRef').textContent = data.id.slice(0, 8); // Short ID
+        successMsg.classList.add('show');
 
-    // Reset form after delay
-    setTimeout(() => {
-        form.reset();
-        form.style.display = 'flex';
-        successMsg.classList.remove('show');
+        // Reset form after delay
+        setTimeout(() => {
+            form.reset();
+            form.style.display = 'flex';
+            successMsg.classList.remove('show');
+            submitBtn.disabled = false;
+        }, 5000);
+
+    } catch (error) {
+        console.error('Reservation error:', error);
+        alert('حدث خطأ أثناء الاتصال بالخادم. حاول مرة أخرى.');
+        submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
-    }, 5000);
-
-} catch (error) {
-    console.error('Reservation error:', error);
-    alert('حدث خطأ أثناء الاتصال بالخادم. حاول مرة أخرى.');
-    submitBtn.classList.remove('loading');
-    submitBtn.disabled = false;
-}
+    }
 }
 
 // === ADMIN ACTIONS ===
