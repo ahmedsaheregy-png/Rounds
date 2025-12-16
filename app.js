@@ -380,6 +380,30 @@ async function toggleReservationVisibility(id, currentStatus) {
     } catch (e) { console.error(e); }
 }
 
+async function editReservation(id, currentShares) {
+    const newShares = prompt('أدخل عدد الأسهم الجديد:', currentShares);
+    if (newShares === null) return; // Cancelled
+
+    const sharesNum = parseInt(newShares);
+    if (isNaN(sharesNum) || sharesNum < 1) {
+        alert('الرقم غير صحيح');
+        return;
+    }
+
+    try {
+        const { error } = await supabase
+            .from('reservations')
+            .update({ shares: sharesNum })
+            .eq('id', id);
+
+        if (error) throw error;
+        // Realtime subscription will update the UI
+    } catch (e) {
+        console.error(e);
+        alert('حدث خطأ أثناء التعديل');
+    }
+}
+
 async function deleteReservation(id) {
     if (!confirm('هل أنت متأكد من الحذف؟')) return;
     try {
