@@ -71,6 +71,22 @@ async function fetchData() {
             state.reservations = reservationsData;
         }
 
+        // --- MANUAL INJECTION (Temporary until added to DB) ---
+        const manualInvestors = [
+            { id: 'temp_1', full_name: 'أ.صهيب درع', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg' },
+            { id: 'temp_2', full_name: 'أ.كاوا جوي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg' },
+            { id: 'temp_3', full_name: 'أ. أحمد شكري', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null },
+            { id: 'temp_4', full_name: 'أ. أحمد عمار', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null }
+        ];
+
+        manualInvestors.forEach(investor => {
+            // Only add if not already present (checking by name)
+            if (!state.reservations.some(r => r.full_name && r.full_name.includes(investor.full_name))) {
+                state.reservations.push(investor);
+            }
+        });
+        // ----------------------------------------------------
+
         state.loading = false;
         updateDisplay();
     } catch (error) {
