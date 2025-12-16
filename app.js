@@ -190,18 +190,6 @@ function initializeForm() {
                     </select>
                     <input type="tel" id="phone" name="phone" required placeholder="5XX XXX XXXX" style="flex: 1;">
                 </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>الصورة الشخصية (اختياري)</label>
-                <div class="file-upload-wrapper">
-                    <input type="file" id="userAvatar" name="userAvatar" accept="image/*">
-                    <div class="file-upload-display">
-                        <div class="upload-icon">📷</div>
-                        <span class="upload-text">اضغط لرفع صورة</span>
-                        <span class="upload-hint">أقصى حجم 2 ميجابايت (JPG, PNG)</span>
-                    </div>
-                </div>
-                <img id="avatarPreview" class="image-preview" src="#" alt="Preview">
-            </div>
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
                 <label>نوع الخصوصية</label>
@@ -264,26 +252,7 @@ function initializeForm() {
 
     form.addEventListener('submit', handleReservation);
 
-    // Image Preview
-    const fileInput = document.getElementById('userAvatar');
-    const preview = document.getElementById('avatarPreview');
-
-    if (fileInput && preview) {
-        fileInput.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.src = e.target.result;
-                    preview.classList.add('show');
-                }
-                reader.readAsDataURL(file);
-            } else {
-                preview.src = '#';
-                preview.classList.remove('show');
-            }
-        });
-    }
+    form.addEventListener('submit', handleReservation);
 }
 
 // === FORM HANDLING ===
@@ -323,36 +292,7 @@ async function handleReservation(e) {
 
 
 
-    // Upload Image if selected
-    let avatarUrl = null;
-    const fileInput = document.getElementById('userAvatar');
 
-    if (fileInput && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        try {
-            submitBtn.textContent = 'جاري رفع الصورة...';
-
-            const fileExt = file.name.split('.').pop();
-            const fileName = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-            const filePath = `${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(filePath, file);
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-
-            avatarUrl = publicUrl;
-        } catch (error) {
-            console.error('Image upload failed:', error);
-            alert('فشل رفع الصورة، سيتم الحجز بدون صورة.');
-            // Continue without image or return? changing text back
-        }
-    }
 
     submitBtn.textContent = 'جاري الحجز...';
 
@@ -364,7 +304,6 @@ async function handleReservation(e) {
                 phone: phone,
                 shares: shares,
                 privacy: privacy,
-                avatar_url: avatarUrl,
                 visible: true
             }])
             .select()
