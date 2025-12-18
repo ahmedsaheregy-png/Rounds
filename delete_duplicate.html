@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>حذف السجل المكرر</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; background: #1a1a2e; color: white; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #00d9ff; }
+        .record { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .record.no-image { border: 2px solid #ff4444; }
+        .record.has-image { border: 2px solid #44ff44; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .delete-btn { background: #ff4444; color: white; }
+        .delete-btn:hover { background: #cc0000; }
+        .status { margin-top: 20px; padding: 15px; border-radius: 8px; }
+        .success { background: #1b4d1b; }
+        .error { background: #4d1b1b; }
+        .info { font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ حذف السجلات المكررة لإبراهيم العص</h1>
+        <div id="records"></div>
+        <div id="status"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://antzuhakwgyuswjipmnf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFudHp1aGFrd2d5dXN3amlwbW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjA4ODUsImV4cCI6MjA4MTIzNjg4NX0.xqhNrQk2hwMzCve2kpfhH0JeYXHhsMx1FEgWajydV3A';
+        
+        let supabaseClient;
+        
+        async function init() {
+            const { createClient } = window.supabase;
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            await findDuplicates();
+        }
+        
+        async function findDuplicates() {
+            const recordsDiv = document.getElementById('records');
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // Find all records containing "ابراهيم" or "إبراهيم" or "العص"
+                const { data, error } = await supabaseClient
+                    .from('reservations')
+                    .select('*')
+                    .or('full_name.ilike.%ابراهيم%,full_name.ilike.%إبراهيم%,full_name.ilike.%العص%');
+                
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    recordsDiv.innerHTML = '<p>لم يتم العثور على أي سجلات لإبراهيم العص</p>';
+                    return;
+                }
+                
+                recordsDiv.innerHTML = '<h3>السجلات الموجودة:</h3>';
+                
+                data.forEach(record => {
+                    const hasImage = record.avatar_url && record.avatar_url.trim() !== '';
+                    const div = document.createElement('div');
+                    div.className = `record ${hasImage ? 'has-image' : 'no-image'}`;
+                    div.innerHTML = `
+                        <div>
+                            <strong>${record.full_name}</strong><br>
+                            <span class="info">ID: ${record.id}</span><br>
+                            <span class="info">الصورة: ${hasImage ? '✅ موجودة' : '❌ غير موجودة'}</span><br>
+                            <span class="info">الأسهم: ${record.shares}</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRecord('${record.id}')">🗑️ حذف</button>
+                    `;
+                    recordsDiv.appendChild(div);
+                });
+                
+                // Automatically find and offer to delete the one without image
+                const noImageRecords = data.filter(r => !r.avatar_url || r.avatar_url.trim() === '');
+                if (noImageRecords.length > 0) {
+                    statusDiv.innerHTML = `<p>⚠️ تم العثور على ${noImageRecords.length} سجل بدون صورة. اضغط على زر الحذف لإزالته.</p>`;
+                }
+                
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="status error">❌ خطأ: ${err.message}</div>`;
+            }
+        }
+        
+        async function deleteRecord(id) {
+            const statusDiv = document.getElementById('status');
+            
+            if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('reservations')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                statusDiv.innerHTML = '<div class="status success">✅ تم الحذف بنجاح! جاري تحديث القائمة...</div>';
+                
+                // Refresh the list
+                setTimeout(() => findDuplicates(), 1000);
+                
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="status error">❌ فشل الحذف: ${err.message}</div>`;
+            }
+        }
+        
+        // Auto-delete records without images
+        async function autoDeleteNoImage() {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('reservations')
+                    .select('*')
+                    .or('full_name.ilike.%ابراهيم%,full_name.ilike.%إبراهيم%,full_name.ilike.%العص%');
+                
+                if (error) throw error;
+                
+                const noImageRecords = data.filter(r => !r.avatar_url || r.avatar_url.trim() === '');
+                
+                for (const record of noImageRecords) {
+                    await supabaseClient.from('reservations').delete().eq('id', record.id);
+                    statusDiv.innerHTML += `<div class="status success">✅ تم حذف: ${record.full_name} (ID: ${record.id})</div>`;
+                }
+                
+                if (noImageRecords.length === 0) {
+                    statusDiv.innerHTML = '<div class="status success">✅ لا توجد سجلات بدون صورة لحذفها</div>';
+                } else {
+                    setTimeout(() => findDuplicates(), 1500);
+                }
+                
+            } catch (err) {
+                statusDiv.innerHTML = `<div class="status error">❌ خطأ: ${err.message}</div>`;
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

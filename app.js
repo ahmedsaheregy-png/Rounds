@@ -699,7 +699,8 @@ function renderParticipants() {
             'صهيب درع': 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg',   // Suhaib Daraa
             'كاوا جوي': 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg',      // Kawa Joy
             'أحمد شكري': 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg',
-            'أحمد عمار': 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg'
+            'أحمد عمار': 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg',
+            'مازن': 'https://ahmedsaheregy-png.github.io/Rounds/images/mazen.jpg' // Mazen
         };
 
         for (const [namePart, imgUrl] of Object.entries(vips)) {
