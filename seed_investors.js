@@ -8,6 +8,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const investors = [
     {
+        full_name: 'أ.إبراهيم العص',
+        shares: 1,
+        avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg'
+    },
+    {
         full_name: 'أ.صهيب درع',
         shares: 1,
         avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg'
@@ -20,10 +25,20 @@ const investors = [
     {
         full_name: 'أ. أحمد شكري',
         shares: 1,
-        avatar_url: null
+        avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg'
     },
     {
         full_name: 'أ. أحمد عمار',
+        shares: 1,
+        avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg'
+    },
+    {
+        full_name: 'رزان صهيب',
+        shares: 1,
+        avatar_url: null
+    },
+    {
+        full_name: 'عدنان رامي',
         shares: 1,
         avatar_url: null
     }
@@ -64,7 +79,47 @@ async function seedInvestors() {
             console.error(`Error processing ${investor.full_name}:`, err.message);
         }
     }
-    console.log('Done.');
+    console.log('Investors seeding done.');
 }
 
-seedInvestors();
+async function seedSettings() {
+    console.log('Seeding settings...');
+
+    try {
+        // Check if settings exist
+        const { data: existing, error } = await supabase
+            .from('settings')
+            .select('id')
+            .single();
+
+        const settingsData = {
+            total_shares: 1000,
+            share_price: 500,
+            is_round_open: true,
+            allow_images: true,
+            display_mode: 'full'
+        };
+
+        if (existing) {
+            console.log('Settings exist. Updating...');
+            await supabase.from('settings')
+                .update(settingsData)
+                .eq('id', existing.id);
+        } else {
+            console.log('Settings not found. Inserting...');
+            await supabase.from('settings').insert(settingsData);
+        }
+        console.log('Settings seeding done.');
+    } catch (err) {
+        console.error('Error seeding settings:', err.message);
+    }
+}
+
+async function seedAll() {
+    await seedSettings();
+    await seedInvestors();
+    console.log('All seeding complete! ✅');
+}
+
+seedAll();
+

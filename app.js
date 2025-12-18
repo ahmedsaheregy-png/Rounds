@@ -218,45 +218,15 @@ function initializeForm() {
                     <input type="tel" id="phone" name="phone" required placeholder="5XX XXX XXXX" style="flex: 1;">
                 </div>
             </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>نوع الخصوصية</label>
-                <div class="privacy-options">
-                    <label class="privacy-option">
-                        <input type="radio" name="privacy" value="full" checked>
-                        <span class="option-content">
-                            <span class="option-text">
-                                <span class="option-title">عرض الاسم + الصورة الشخصية</span>
-                                <span class="option-desc">سيظهر اسمك وصورتك في قائمة المؤسيين (نوصي بهذا الاختيار للتعارف وتشجيع باقي الزملاء)</span>
-                            </span>
-                        </span>
-                    </label>
-                    <label class="privacy-option">
-                        <input type="radio" name="privacy" value="name_only">
-                        <span class="option-content">
-                            <span class="option-text">
-                                <span class="option-title">عرض الاسم فقط</span>
-                                <span class="option-desc">يظهر اسمك فقط ويتم إخفاء صورتك</span>
-                            </span>
-                        </span>
-                    </label>
-                    <label class="privacy-option">
-                        <input type="radio" name="privacy" value="anonymous">
-                        <span class="option-content">
-                            <span class="option-text">
-                                <span class="option-title">فاعل خير (مخفي)</span>
-                                <span class="option-desc">لا يظهر اسمك ولا صورتك في القائمة</span>
-                            </span>
-                        </span>
-                    </label>
-                </div>
-            </div>
+            <!-- Privacy is set to 'full' by default -->
+            <input type="hidden" name="privacy" value="full">
         </div>
 
-        <button type="submit" class="cta-button" id="submitBtn" style="width: 100%; margin-top: 24px;">تأكيد الحجز</button>
+        <button type="submit" class="cta-button" id="submitBtn" style="width: 100%; margin-top: 24px; text-align: center; display: flex; justify-content: center; align-items: center;">تأكيد الحجز</button>
         <div class="success-message" id="successMessage">
             تم الحجز بنجاح! رقم طلبك: <span id="reservationRef"></span>
         </div>
-        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; color: var(--text-secondary);">
+        <p style="text-align: center; margin-top: 15px; font-size: 1.1rem; color: var(--text-secondary); font-weight: 500;">
             لتعديل أو إلغاء الحجز، يرجى التواصل مع الإدارة مباشرة.
         </p>
     `;
@@ -278,8 +248,6 @@ function initializeForm() {
     }
 
     form.addEventListener('submit', handleReservation);
-
-    form.addEventListener('submit', handleReservation);
 }
 
 // === FORM HANDLING ===
@@ -299,7 +267,7 @@ async function handleReservation(e) {
     const countryCode = document.getElementById('countryCode').value;
     const phoneBody = document.getElementById('phone').value;
     const phone = `${countryCode} ${phoneBody}`;
-    const privacy = document.querySelector('input[name="privacy"]:checked').value;
+    const privacy = formData.get('privacy') || 'full';
 
     // Validation
     if (!fullName || !phoneBody || !shares || !privacy) {
