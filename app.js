@@ -601,44 +601,27 @@ function updateDisplay() {
     if (badge) {
         let badgeHtml = '';
         let badgeClass = 'hero-badge';
+        const status = state.settings.roundStatus || 'open';
 
-        if (state.settings.roundStatus === 'open') {
+        if (status === 'open') {
             badgeHtml = '<span class="pulse-dot"></span> جولة مفتوحة الآن';
-        } else if (state.settings.roundStatus === 'completed') {
-            badgeHtml = '<span class="status-dot closed"></span> جولة تمت بنجاح';
+        } else if (status === 'closed' || status === 'completed') {
+            badgeHtml = '<span class="status-dot closed"></span> 🎉 جولة تمت بنجاح';
             badgeClass += ' closed';
-        } else if (state.settings.roundStatus === 'soon') {
-            badgeHtml = '<span class="status-dot waiting"></span> سيتم إفتتاح هذه الجولة بعد قليل بإذن الله';
-            badgeClass += ' waiting'; // Ensure you add CSS for .waiting if needed, or reuse closed style
+        } else if (status === 'soon') {
+            badgeHtml = '<span class="status-dot waiting"></span> يتم افتتاح الجولة قريبا جدا بإذن الله';
+            badgeClass += ' waiting';
         }
 
         badge.innerHTML = badgeHtml;
         badge.className = badgeClass;
     }
 
-    // 6. Round Closed Overlay using 3-state Logic
+    // 6. Round Overlay - DISABLED: we want the page to remain functional
+    // Overlay is now only shown in emergency maintenance mode
     const overlay = document.getElementById('roundClosedOverlay');
     if (overlay) {
-        const status = state.settings.roundStatus || (state.settings.isRoundOpen ? 'open' : 'closed');
-
-        if (status === 'open') {
-            overlay.classList.remove('show');
-        } else {
-            overlay.classList.add('show');
-            const title = overlay.querySelector('h2');
-            const desc = overlay.querySelector('p');
-
-            if (title && desc) {
-                if (status === 'soon') {
-                    title.textContent = 'يتم افتتاح الجولة قريبا جدا بإذن الله';
-                    desc.textContent = 'يرجى الانتظار...';
-                } else {
-                    // closed or completed
-                    title.textContent = '🎉 جولة تمت بنجاح';
-                    desc.textContent = 'سيتم الإعلان عن الجولة القادمة قريباً';
-                }
-            }
-        }
+        overlay.classList.remove('show'); // Always hide the overlay
     }
 
     // 7. Update Admin Dropdown
