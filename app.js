@@ -4,7 +4,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let supabase;
 
 // === STATE MANAGEMENT ===
-const state = {
+// === STATE MANAGEMENT ===
+var state = {
     settings: {
         totalShares: 1000,
         sharePrice: 500,
@@ -12,24 +13,48 @@ const state = {
         allowImages: true,
         displayMode: 'full' // full, list, grid
     },
-    reservations: [],
+    reservations: [
+        { id: 'temp_0', full_name: 'أ.إبراهيم العص', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg' },
+        { id: 'temp_1', full_name: 'أ.صهيب درع', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg' },
+        { id: 'temp_2', full_name: 'أ.كاوا جوي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg' },
+        { id: 'temp_3', full_name: 'أ. أحمد شكري', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg' },
+        { id: 'temp_4', full_name: 'أ. أحمد عمار', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg' },
+        { id: 'temp_5', full_name: 'رزان صهيب', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null },
+        { id: 'temp_6', full_name: 'عدنان رامي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null }
+    ],
     loading: true
 };
 
 // === INITIALIZATION ===
 async function bootstrap() {
     try {
+        console.log("Bootstrap starting...");
         if (window.supabase) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const { createClient } = window.supabase;
+            if (createClient) {
+                supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: false } // Required for file:// protocol
+                });
+            } else {
+                // Fallback if structure is different
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: false }
+                });
+            }
+
+            console.log("Supabase client initialized");
             await initApp();
-            setupFileUploadListener(); // Initialize upload listener
+            setupFileUploadListener();
         } else {
-            console.error("Supabase library not loaded");
-            alert("فشل تحميل المكتبات اللازمة");
+            console.warn("Supabase library not loaded. Starting in offline mode.");
         }
+
+        // Proceed even if Supabase failed to load
+        await initApp();
+
     } catch (error) {
-        console.error("Supabase init error:", error);
-        alert("تنبيه: " + (error.message || JSON.stringify(error)));
+        console.warn("Bootstrap warning:", error);
+        await initApp();
     }
 }
 
@@ -51,35 +76,38 @@ async function initApp() {
 
 async function fetchData() {
     try {
-        // Fetch Settings
-        const { data: settingsData, error: settingsError } = await supabase
-            .from('settings')
-            .select('*')
-            .single();
+        if (supabase) {
+            // Fetch Settings
+            const { data: settingsData, error: settingsError } = await supabase
+                .from('settings')
+                .select('*')
+                .single();
 
-        if (settingsData) {
-            state.settings = {
-                totalShares: settingsData.total_shares || 1000,
-                sharePrice: settingsData.share_price || 500,
-                isRoundOpen: (settingsData.is_round_open !== undefined && settingsData.is_round_open !== null) ? settingsData.is_round_open : true,
-                allowImages: settingsData.allow_images !== undefined ? settingsData.allow_images : true,
-                displayMode: settingsData.display_mode || 'full'
-            };
-        } else if (settingsError) {
-            console.warn("Settings not found, using defaults. ensure SQL script is run.");
+            if (settingsData) {
+                state.settings = {
+                    totalShares: settingsData.total_shares || 1000,
+                    sharePrice: settingsData.share_price || 500,
+                    isRoundOpen: (settingsData.is_round_open !== undefined && settingsData.is_round_open !== null) ? settingsData.is_round_open : true,
+                    allowImages: settingsData.allow_images !== undefined ? settingsData.allow_images : true,
+                    displayMode: settingsData.display_mode || 'full'
+                };
+            }
+
+            // Fetch Reservations
+            const { data: reservationsData, error: reservationsError } = await supabase
+                .from('reservations')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (reservationsData && reservationsData.length > 0) {
+                state.reservations = reservationsData;
+            }
         }
-
-        // Fetch Reservations
-        const { data: reservationsData, error: reservationsError } = await supabase
-            .from('reservations')
-            .select('*')
-            .order('created_at', { ascending: true });
-
-        if (reservationsData) {
-            state.reservations = reservationsData;
-        }
-
-        // --- MANUAL INJECTION (Temporary until added to DB) ---
+    } catch (error) {
+        console.error('Error fetching data from Supabase:', error);
+        // We keep the initial manual data in state.reservations
+    } finally {
+        // Ensure manual investors are always present if not in DB
         const manualInvestors = [
             { id: 'temp_0', full_name: 'أ.إبراهيم العص', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg' },
             { id: 'temp_1', full_name: 'أ.صهيب درع', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg' },
@@ -91,9 +119,7 @@ async function fetchData() {
         ];
 
         manualInvestors.forEach(investor => {
-            // Normalize for comparison (remove 'أ.', spaces, alef variants)
             const normalize = (name) => (name || '').replace(/[أإآ]/g, 'ا').replace('أ.', '').replace(/\./g, '').trim();
-
             const exists = state.reservations.some(r => {
                 const dbName = normalize(r.full_name);
                 const manualName = normalize(investor.full_name);
@@ -104,16 +130,16 @@ async function fetchData() {
                 state.reservations.push(investor);
             }
         });
-        // ----------------------------------------------------
 
         state.loading = false;
+        console.log("Final State Reservations:", state.reservations);
         updateDisplay();
-    } catch (error) {
-        console.error('Error fetching data:', error);
     }
 }
 
 function setupRealtimeSubscription() {
+    if (!supabase) return; // Prevent crash in offline mode
+
     supabase
         .channel('public:any')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, payload => {
