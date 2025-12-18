@@ -348,6 +348,7 @@ select {
 
 .status-dot.closed {
     background: var(--secondary);
+}
 
 .pulse-dot {
     width: 10px;
@@ -1654,7 +1655,8 @@ select {
     inset: 0;
     background: rgba(15, 15, 26, 0.98);
     z-index: 1000;
-    display: none !important; /* Managed via JS, but keeps it hidden by default */
+    display: none !important;
+    /* Managed via JS, but keeps it hidden by default */
     align-items: center;
     justify-content: center;
 }
@@ -1679,12 +1681,14 @@ select {
 .closed-content h2 {
     font-size: 2.5rem;
     margin-bottom: 16px;
-    color: white; /* Ensure visibility */
+    color: white;
+    /* Ensure visibility */
     font-weight: 800;
 }
 
 .closed-content p {
-    color: #94a3b8; /* Lighter gray for dark background */
+    color: #94a3b8;
+    /* Lighter gray for dark background */
     font-size: 1.5rem;
 }
 
