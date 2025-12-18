@@ -1,7 +1,7 @@
 // === CONFIGURATION ===
 const SUPABASE_URL = 'https://antzuhakwgyuswjipmnf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFudHp1aGFrd2d5dXN3amlwbW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjA4ODUsImV4cCI6MjA4MTIzNjg4NX0.xqhNrQk2hwMzCve2kpfhH0JeYXHhsMx1FEgWajydV3A';
-let supabase;
+var supabaseClient; // Renamed to avoid conflict with global 'supabase' from CDN
 
 // === STATE MANAGEMENT ===
 // === STATE MANAGEMENT ===
@@ -26,6 +26,7 @@ var state = {
     loading: true
 };
 
+
 // === INITIALIZATION ===
 // === INITIALIZATION ===
 async function bootstrap(attempts = 0) {
@@ -35,11 +36,11 @@ async function bootstrap(attempts = 0) {
             const { createClient } = window.supabase;
             // Handle both UMD and module structures
             if (createClient) {
-                supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+                supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
                     auth: { persistSession: false }
                 });
             } else {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
                     auth: { persistSession: false }
                 });
             }
@@ -71,18 +72,20 @@ if (document.readyState === 'loading') {
 }
 
 async function initApp() {
+    // Render immediately with initial state (fallback data)
+    updateDisplay();
+
     await fetchData();
     setupRealtimeSubscription();
     initializeForm();
-    renderApp();
     setupEventListeners();
 }
 
 async function fetchData() {
     try {
-        if (supabase) {
+        if (supabaseClient) {
             // Fetch Settings
-            const { data: settingsData, error: settingsError } = await supabase
+            const { data: settingsData, error: settingsError } = await supabaseClient
                 .from('settings')
                 .select('*')
                 .single();
@@ -99,13 +102,16 @@ async function fetchData() {
             }
 
             // Fetch Reservations
-            const { data: reservationsData, error: reservationsError } = await supabase
+            const { data: reservationsData, error: reservationsError } = await supabaseClient
                 .from('reservations')
                 .select('*')
                 .order('created_at', { ascending: true });
 
+            // Only overwrite if we actually got data back from the server
             if (reservationsData && reservationsData.length > 0) {
                 state.reservations = reservationsData;
+            } else {
+                console.log("No remote data found or connection failed. Keeping local fallback data.");
             }
         }
     } catch (error) {
@@ -114,14 +120,15 @@ async function fetchData() {
     } finally {
         state.loading = false;
         console.log("Final State Reservations:", state.reservations);
+        // Update again with any new data (or confirming fallback)
         updateDisplay();
     }
 }
 
 function setupRealtimeSubscription() {
-    if (!supabase) return; // Prevent crash in offline mode
+    if (!supabaseClient) return; // Prevent crash in offline mode
 
-    supabase
+    supabaseClient
         .channel('public:any')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, payload => {
             handleRealtimeReservation(payload);
@@ -308,7 +315,7 @@ async function handleReservation(e) {
     submitBtn.textContent = 'جاري الحجز...';
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('reservations')
             .insert([{
                 full_name: fullName,
@@ -353,7 +360,7 @@ async function changeRoundStatus(e) {
 
     try {
         // Try updating both (requires round_status column)
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('settings')
             .update({
                 is_round_open: isOpen,
@@ -367,7 +374,7 @@ async function changeRoundStatus(e) {
         console.warn("Update with round_status failed, trying fallback...", e.message);
         // Fallback: Try updating ONLY is_round_open (backward compatibility)
         try {
-            await supabase
+            await supabaseClient
                 .from('settings')
                 .update({ is_round_open: isOpen })
                 .gt('id', 0);
@@ -386,7 +393,7 @@ async function updateSettings(e) {
     const sharePrice = parseInt(document.getElementById('adminSharePrice').value);
 
     try {
-        await supabase
+        await supabaseClient
             .from('settings')
             .update({
                 total_shares: totalShares,
@@ -414,7 +421,7 @@ async function toggleReservationVisibility(id, currentStatus) {
             if (r) newStatus = !r.visible;
         }
 
-        await supabase
+        await supabaseClient
             .from('reservations')
             .update({ visible: newStatus })
             .eq('id', id);
@@ -432,7 +439,7 @@ async function editReservation(id, currentShares) {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('reservations')
             .update({ shares: sharesNum })
             .eq('id', id);
@@ -477,7 +484,7 @@ function setupFileUploadListener() {
             const fileName = `${currentUploadId}_${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            const { data, error: uploadError } = await supabase.storage
+            const { data, error: uploadError } = await supabaseClient.storage
                 .from('avatars')
                 .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
@@ -489,12 +496,12 @@ function setupFileUploadListener() {
             }
 
             // 2. Get Public URL
-            const { data: { publicUrl } } = supabase.storage
+            const { data: { publicUrl } } = supabaseClient.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
 
             // 3. Update Record
-            const { error: dbError } = await supabase
+            const { error: dbError } = await supabaseClient
                 .from('reservations')
                 .update({ avatar_url: publicUrl })
                 .eq('id', currentUploadId);
@@ -516,7 +523,7 @@ function setupFileUploadListener() {
 async function deleteReservation(id) {
     if (!confirm('هل أنت متأكد من الحذف؟')) return;
     try {
-        await supabase
+        await supabaseClient
             .from('reservations')
             .delete()
             .eq('id', id);
