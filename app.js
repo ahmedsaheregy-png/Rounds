@@ -14,7 +14,15 @@ var state = {
         allowImages: true,
         displayMode: 'full' // full, list, grid
     },
-    reservations: [],
+    reservations: [
+        { id: '1', full_name: 'أ.إبراهيم العص', shares: 1, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg', visible: true, privacy: 'full', phone: '' },
+        { id: '2', full_name: 'أ.صهيب درع', shares: 1, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg', visible: true, privacy: 'full', phone: '' },
+        { id: '3', full_name: 'أ.كاوا جوي', shares: 1, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg', visible: true, privacy: 'full', phone: '' },
+        { id: '4', full_name: 'أ. أحمد شكري', shares: 1, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg', visible: true, privacy: 'full', phone: '' },
+        { id: '5', full_name: 'أ. أحمد عمار', shares: 1, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg', visible: true, privacy: 'full', phone: '' },
+        { id: '6', full_name: 'رزان صهيب', shares: 1, avatar_url: null, visible: true, privacy: 'full', phone: '' },
+        { id: '7', full_name: 'عدنان رامي', shares: 1, avatar_url: null, visible: true, privacy: 'full', phone: '' }
+    ],
     loading: true
 };
 
