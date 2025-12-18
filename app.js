@@ -19,17 +19,18 @@ var state = {
 };
 
 // === INITIALIZATION ===
-async function bootstrap() {
-    try {
-        console.log("Bootstrap starting...");
-        if (window.supabase) {
+// === INITIALIZATION ===
+async function bootstrap(attempts = 0) {
+    if (window.supabase) {
+        console.log("Supabase SDK found. Initializing...");
+        try {
             const { createClient } = window.supabase;
+            // Handle both UMD and module structures
             if (createClient) {
                 supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    auth: { persistSession: false } // Required for file:// protocol
+                    auth: { persistSession: false }
                 });
             } else {
-                // Fallback if structure is different
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
                     auth: { persistSession: false }
                 });
@@ -38,25 +39,27 @@ async function bootstrap() {
             console.log("Supabase client initialized");
             await initApp();
             setupFileUploadListener();
-        } else {
-            console.warn("Supabase library not loaded. Starting in offline mode.");
+        } catch (err) {
+            console.error("Initialization Failed:", err);
+            document.body.innerHTML = `<div style="color:white;text-align:center;padding:50px;"><h1>System Error</h1><p>${err.message}</p></div>`;
         }
-
-        // Proceed even if Supabase failed to load
-        await initApp();
-
-    } catch (error) {
-        console.warn("Bootstrap warning:", error);
-        await initApp();
+    } else {
+        if (attempts < 50) { // Try for 5 seconds
+            console.warn(`Supabase SDK not ready (Attempt ${attempts + 1}). Retrying...`);
+            setTimeout(() => bootstrap(attempts + 1), 100);
+        } else {
+            console.error("Supabase SDK failed to load.");
+            alert("فشل تحميل قاعدة البيانات. يرجى التحقق من الاتصال بالإنترنت.");
+        }
     }
 }
 
 // Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrap);
+    document.addEventListener('DOMContentLoaded', () => bootstrap(0));
 } else {
-    // DOM already loaded, run immediately
-    bootstrap();
+    // DOM already loaded
+    bootstrap(0);
 }
 
 async function initApp() {
@@ -81,7 +84,7 @@ async function fetchData() {
                     totalShares: settingsData.total_shares || 1000,
                     sharePrice: settingsData.share_price || 500,
                     isRoundOpen: (settingsData.is_round_open !== undefined && settingsData.is_round_open !== null) ? settingsData.is_round_open : true,
-                    roundStatus: settingsData.round_status || (settingsData.is_round_open ? 'open' : 'completed'),
+                    roundStatus: (settingsData.round_status !== undefined) ? settingsData.round_status : (settingsData.is_round_open ? 'open' : 'completed'),
                     allowImages: settingsData.allow_images !== undefined ? settingsData.allow_images : true,
                     displayMode: settingsData.display_mode || 'full'
                 };
@@ -789,7 +792,7 @@ function setupEventListeners() {
     }
 
     // Modal
-    document.getElementById('adminBtn')?.addEventListener('click', (e) => {
+    document.getElementById('adminBtn')?.addEventListener('click', async (e) => {
         e.preventDefault();
         document.getElementById('adminModal').classList.add('show');
     });
