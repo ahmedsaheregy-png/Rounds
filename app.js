@@ -619,7 +619,9 @@ function updateDisplay() {
     // 6. Round Closed Overlay using 3-state Logic
     const overlay = document.getElementById('roundClosedOverlay');
     if (overlay) {
-        if (state.settings.isRoundOpen) {
+        const status = state.settings.roundStatus || (state.settings.isRoundOpen ? 'open' : 'closed');
+
+        if (status === 'open') {
             overlay.classList.remove('show');
         } else {
             overlay.classList.add('show');
@@ -627,8 +629,14 @@ function updateDisplay() {
             const desc = overlay.querySelector('p');
 
             if (title && desc) {
-                title.textContent = 'يتم افتتاح الجولة قريبا جدا بإذن الله';
-                desc.textContent = 'يرجى الانتظار...';
+                if (status === 'soon') {
+                    title.textContent = 'يتم افتتاح الجولة قريبا جدا بإذن الله';
+                    desc.textContent = 'يرجى الانتظار...';
+                } else {
+                    // closed or completed
+                    title.textContent = '🎉 جولة تمت بنجاح';
+                    desc.textContent = 'سيتم الإعلان عن الجولة القادمة قريباً';
+                }
             }
         }
     }
