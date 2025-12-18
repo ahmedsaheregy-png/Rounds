@@ -609,8 +609,8 @@ function updateDisplay() {
             badgeHtml = '<span class="status-dot closed"></span> 🎉 جولة تمت بنجاح';
             badgeClass += ' closed';
         } else if (status === 'soon') {
-            badgeHtml = '<span class="status-dot waiting"></span> يتم افتتاح الجولة قريبا جدا بإذن الله';
-            badgeClass += ' waiting';
+            badgeHtml = '<span class="pulse-dot"></span> يتم افتتاح هذه الجولة التمويلية قريبا جدا بإذن الله';
+            // Keep green color like 'open' status
         }
 
         badge.innerHTML = badgeHtml;
