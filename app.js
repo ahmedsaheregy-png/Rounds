@@ -337,6 +337,9 @@ async function handleReservation(e) {
         document.getElementById('reservationRef').textContent = data.id.slice(0, 8); // Short ID
         successMsg.classList.add('show');
 
+        // Light confetti effect
+        launchConfetti();
+
         // Reset form after delay
         setTimeout(() => {
             form.reset();
@@ -832,3 +835,60 @@ function setupEventListeners() {
         });
     }
 }
+
+// === CONFETTI EFFECT ===
+function launchConfetti() {
+    const container = document.getElementById('confetti-container');
+    if (!container) return;
+
+    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+    const confettiCount = 30; // Light amount
+
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.style.cssText = `
+            position: absolute;
+            width: ${Math.random() * 10 + 5}px;
+            height: ${Math.random() * 10 + 5}px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            left: ${Math.random() * 100}%;
+            top: -20px;
+            border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+            animation: confetti-fall ${Math.random() * 2 + 2}s ease-out forwards;
+            animation-delay: ${Math.random() * 0.5}s;
+            opacity: 0.9;
+        `;
+        container.appendChild(confetti);
+    }
+
+    // Clean up after animation
+    setTimeout(() => {
+        container.innerHTML = '';
+    }, 4000);
+}
+
+// Add confetti animation CSS dynamically
+const confettiStyle = document.createElement('style');
+confettiStyle.textContent = `
+    #confetti-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 10;
+    }
+    @keyframes confetti-fall {
+        0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(300px) rotate(720deg);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(confettiStyle);
