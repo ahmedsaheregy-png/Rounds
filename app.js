@@ -17,7 +17,7 @@ const state = {
 };
 
 // === INITIALIZATION ===
-document.addEventListener('DOMContentLoaded', async () => {
+async function bootstrap() {
     try {
         if (window.supabase) {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -31,7 +31,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Supabase init error:", error);
         alert("تنبيه: " + (error.message || JSON.stringify(error)));
     }
-});
+}
+
+// Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+} else {
+    // DOM already loaded, run immediately
+    bootstrap();
+}
 
 async function initApp() {
     await fetchData();
