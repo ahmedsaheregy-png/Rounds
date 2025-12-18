@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Debug DB</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Database Debugger</h1>
+    <div>
+        <h2>Settings Table</h2>
+        <pre id="settings-output">Loading...</pre>
+    </div>
+    <div>
+        <h2>Reservations Table</h2>
+        <pre id="reservations-output">Loading...</pre>
+    </div>
+
+    <script>
+        const { createClient } = supabase;
+        const SUPABASE_URL = 'https://antzuhakwgyuswjipmnf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFudHp1aGFrd2d5dXN3amlwbW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjA4ODUsImV4cCI6MjA4MTIzNjg4NX0.xqhNrQk2hwMzCve2kpfhH0JeYXHhsMx1FEgWajydV3A';
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function checkDB() {
+            // Check Settings
+            try {
+                const { data, error } = await client.from('settings').select('*');
+                if (error) throw error;
+                document.getElementById('settings-output').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('settings-output').className = 'success';
+            } catch (err) {
+                document.getElementById('settings-output').textContent = `Error: ${err.message}\nDetails: ${JSON.stringify(err)}`;
+                document.getElementById('settings-output').className = 'error';
+            }
+
+            // Check Reservations
+            try {
+                const { data, error } = await client.from('reservations').select('*');
+                if (error) throw error;
+                document.getElementById('reservations-output').textContent = `Count: ${data.length}\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('reservations-output').className = 'success';
+            } catch (err) {
+                document.getElementById('reservations-output').textContent = `Error: ${err.message}\nDetails: ${JSON.stringify(err)}`;
+                document.getElementById('reservations-output').className = 'error';
+            }
+
+            document.body.insertAdjacentHTML('beforeend', '<h2 id="done">DONE</h2>');
+        }
+
+        checkDB();
+    </script>
+</body>
+
+</html>

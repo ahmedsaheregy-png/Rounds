@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <div id="cache-control" style="display:none;">v3.0</div>
-    <link rel="stylesheet" href="styles.css?v=3.0">
+    <div id="cache-control" style="display:none;">v3.2</div>
+    <link rel="stylesheet" href="styles.css?v=3.2">
 </head>
 
 <body>
@@ -120,7 +120,7 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">انضم لأسرة SAWYAN</h2>
-                <p class="section-subtitle">شارك في هذه الجولة حتى الآن:</p>
+                <p class="section-subtitle">شارك في هذه الجولة حتى الآن الأفاضل:</p>
             </div>
             <div class="participants-grid" id="participantsGrid"></div>
             <div class="no-participants" id="noParticipants">
@@ -155,9 +155,16 @@
 
                 <div id="reservationsTab" class="tab-content active">
                     <div class="reservations-actions">
-                        <button class="action-btn" id="toggleRoundBtn">
-                            ⏯️ فتح/إغلاق الجولة
-                        </button>
+                        <div class="status-control-wrapper"
+                            style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                            <label style="color: white; font-weight: bold;">حالة الجولة:</label>
+                            <select id="roundStatusSelect"
+                                style="padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: white; flex: 1;">
+                                <option value="open">🟢 جولة مفتوحة الآن</option>
+                                <option value="completed">🎉 جولة تمت بنجاح</option>
+                                <option value="soon">⏳ سيتم الإفتتاح قريباً</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="reservations-table-wrapper">
                         <table class="reservations-table">
@@ -237,7 +244,7 @@
 
     <input type="file" id="adminImageUpload" accept="image/*" style="display: none;">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=3.2"></script>
 </body>
 
 </html>

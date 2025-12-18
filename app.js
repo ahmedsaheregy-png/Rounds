@@ -10,18 +10,11 @@ var state = {
         totalShares: 1000,
         sharePrice: 500,
         isRoundOpen: true,
+        roundStatus: 'open',
         allowImages: true,
         displayMode: 'full' // full, list, grid
     },
-    reservations: [
-        { id: 'temp_0', full_name: 'أ.إبراهيم العص', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg' },
-        { id: 'temp_1', full_name: 'أ.صهيب درع', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg' },
-        { id: 'temp_2', full_name: 'أ.كاوا جوي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg' },
-        { id: 'temp_3', full_name: 'أ. أحمد شكري', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg' },
-        { id: 'temp_4', full_name: 'أ. أحمد عمار', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg' },
-        { id: 'temp_5', full_name: 'رزان صهيب', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null },
-        { id: 'temp_6', full_name: 'عدنان رامي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null }
-    ],
+    reservations: [],
     loading: true
 };
 
@@ -88,6 +81,7 @@ async function fetchData() {
                     totalShares: settingsData.total_shares || 1000,
                     sharePrice: settingsData.share_price || 500,
                     isRoundOpen: (settingsData.is_round_open !== undefined && settingsData.is_round_open !== null) ? settingsData.is_round_open : true,
+                    roundStatus: settingsData.round_status || (settingsData.is_round_open ? 'open' : 'completed'),
                     allowImages: settingsData.allow_images !== undefined ? settingsData.allow_images : true,
                     displayMode: settingsData.display_mode || 'full'
                 };
@@ -107,30 +101,6 @@ async function fetchData() {
         console.error('Error fetching data from Supabase:', error);
         // We keep the initial manual data in state.reservations
     } finally {
-        // Ensure manual investors are always present if not in DB
-        const manualInvestors = [
-            { id: 'temp_0', full_name: 'أ.إبراهيم العص', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ibrahim_alas.jpg' },
-            { id: 'temp_1', full_name: 'أ.صهيب درع', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/suhaib_v2.jpg' },
-            { id: 'temp_2', full_name: 'أ.كاوا جوي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg' },
-            { id: 'temp_3', full_name: 'أ. أحمد شكري', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg' },
-            { id: 'temp_4', full_name: 'أ. أحمد عمار', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg' },
-            { id: 'temp_5', full_name: 'رزان صهيب', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null },
-            { id: 'temp_6', full_name: 'عدنان رامي', shares: 1, phone: 'System', privacy: 'full', visible: true, avatar_url: null }
-        ];
-
-        manualInvestors.forEach(investor => {
-            const normalize = (name) => (name || '').replace(/[أإآ]/g, 'ا').replace('أ.', '').replace(/\./g, '').trim();
-            const exists = state.reservations.some(r => {
-                const dbName = normalize(r.full_name);
-                const manualName = normalize(investor.full_name);
-                return dbName.includes(manualName) || manualName.includes(dbName);
-            });
-
-            if (!exists) {
-                state.reservations.push(investor);
-            }
-        });
-
         state.loading = false;
         console.log("Final State Reservations:", state.reservations);
         updateDisplay();
@@ -173,6 +143,7 @@ function handleRealtimeSettings(payload) {
             totalShares: s.total_shares,
             sharePrice: s.share_price,
             isRoundOpen: s.is_round_open,
+            roundStatus: s.round_status || (s.is_round_open ? 'open' : 'completed'),
             allowImages: s.allow_images,
             displayMode: s.display_mode
         };
@@ -365,14 +336,35 @@ async function handleReservation(e) {
 }
 
 // === ADMIN ACTIONS ===
-async function toggleRoundStatus() {
-    const newState = !state.settings.isRoundOpen;
+async function changeRoundStatus(e) {
+    const newStatus = e.target.value;
+    const isOpen = newStatus === 'open';
+
     try {
-        await supabase
+        // Try updating both (requires round_status column)
+        const { error } = await supabase
             .from('settings')
-            .update({ is_round_open: newState })
+            .update({
+                is_round_open: isOpen,
+                round_status: newStatus
+            })
             .gt('id', 0);
-    } catch (e) { console.error(e); }
+
+        if (error) throw error;
+
+    } catch (e) {
+        console.warn("Update with round_status failed, trying fallback...", e.message);
+        // Fallback: Try updating ONLY is_round_open (backward compatibility)
+        try {
+            await supabase
+                .from('settings')
+                .update({ is_round_open: isOpen })
+                .gt('id', 0);
+        } catch (fallbackErr) {
+            console.error("Fallback update also failed:", fallbackErr);
+            alert('فشل تحديث حالة الجولة: ' + (e.message || fallbackErr.message));
+        }
+    }
 }
 
 async function updateSettings(e) {
@@ -393,7 +385,7 @@ async function updateSettings(e) {
 
         alert('تم حفظ الإعدادات');
     } catch (err) {
-        alert('خطأ في الحفظ');
+        alert('خطأ في الحفظ: ' + (err.message || 'Unknown Error'));
         console.error(err);
     }
 }
@@ -589,21 +581,49 @@ function updateDisplay() {
     // 5. Hero Badge Status
     const badge = document.querySelector('.hero-badge');
     if (badge) {
-        badge.innerHTML = state.settings.isRoundOpen
-            ? '<span class="pulse-dot"></span> جولة مفتوحة الآن'
-            : '<span class="status-dot closed"></span> جولة مغلقة';
+        let badgeHtml = '';
+        let badgeClass = 'hero-badge';
 
-        badge.className = state.settings.isRoundOpen ? 'hero-badge' : 'hero-badge closed';
+        if (state.settings.roundStatus === 'open') {
+            badgeHtml = '<span class="pulse-dot"></span> جولة مفتوحة الآن';
+        } else if (state.settings.roundStatus === 'completed') {
+            badgeHtml = '<span class="status-dot closed"></span> جولة تمت بنجاح';
+            badgeClass += ' closed';
+        } else if (state.settings.roundStatus === 'soon') {
+            badgeHtml = '<span class="status-dot waiting"></span> سيتم إفتتاح هذه الجولة بعد قليل بإذن الله';
+            badgeClass += ' waiting'; // Ensure you add CSS for .waiting if needed, or reuse closed style
+        }
+
+        badge.innerHTML = badgeHtml;
+        badge.className = badgeClass;
     }
 
-    // 6. Round Closed Overlay
+    // 6. Round Closed Overlay using 3-state Logic
     const overlay = document.getElementById('roundClosedOverlay');
     if (overlay) {
-        if (!state.settings.isRoundOpen) {
-            overlay.classList.add('show');
-        } else {
+        if (state.settings.roundStatus === 'open') {
             overlay.classList.remove('show');
+        } else {
+            overlay.classList.add('show');
+            const title = overlay.querySelector('h2');
+            const desc = overlay.querySelector('p');
+
+            if (title && desc) {
+                if (state.settings.roundStatus === 'completed') {
+                    title.textContent = 'جولة تمت بنجاح';
+                    desc.textContent = 'سيتم الإعلان عن الجولة القادمة قريباً';
+                } else if (state.settings.roundStatus === 'soon') {
+                    title.textContent = 'سيتم إفتتاح هذه الجولة بعد قليل بإذن الله';
+                    desc.textContent = 'يرجى الانتظار...';
+                }
+            }
         }
+    }
+
+    // 7. Update Admin Dropdown
+    const statusSelect = document.getElementById('roundStatusSelect');
+    if (statusSelect) {
+        statusSelect.value = state.settings.roundStatus || (state.settings.isRoundOpen ? 'open' : 'completed');
     }
 }
 
@@ -788,8 +808,8 @@ function setupEventListeners() {
     // Save Settings
     document.getElementById('saveSettingsBtn')?.addEventListener('click', updateSettings);
 
-    // Toggle Round
-    document.getElementById('toggleRoundBtn')?.addEventListener('click', toggleRoundStatus);
+    // Change Round Status
+    document.getElementById('roundStatusSelect')?.addEventListener('change', changeRoundStatus);
 
     // Tabs logic for admin
     const tabs = document.querySelectorAll('.admin-tab');

@@ -323,6 +323,32 @@ select {
     /* Increased size */
 }
 
+.hero-badge.waiting {
+    border-color: #f59e0b;
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.hero-badge.closed {
+    border-color: var(--secondary);
+    color: var(--secondary);
+    background: rgba(5, 150, 105, 0.1);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.waiting {
+    background: #f59e0b;
+}
+
+.status-dot.closed {
+    background: var(--secondary);
+
 .pulse-dot {
     width: 10px;
     height: 10px;
@@ -1628,34 +1654,38 @@ select {
     inset: 0;
     background: rgba(15, 15, 26, 0.98);
     z-index: 1000;
-    /* Lower than admin modal (2000) */
-    display: none !important;
-    /* Forces unlocking for now */
+    display: none !important; /* Managed via JS, but keeps it hidden by default */
     align-items: center;
     justify-content: center;
 }
 
 .round-closed-overlay.show {
-    display: flex;
+    display: flex !important;
 }
 
 .closed-content {
     text-align: center;
+    max-width: 600px;
+    padding: 0 20px;
 }
 
 .closed-icon {
     font-size: 80px;
     margin-bottom: 24px;
     opacity: 0.7;
+    animation: float 3s ease-in-out infinite;
 }
 
 .closed-content h2 {
-    font-size: 2rem;
-    margin-bottom: 12px;
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    color: white; /* Ensure visibility */
+    font-weight: 800;
 }
 
 .closed-content p {
-    color: var(--text-secondary);
+    color: #94a3b8; /* Lighter gray for dark background */
+    font-size: 1.5rem;
 }
 
 /* === FOOTER === */
