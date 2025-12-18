@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فتح الجولة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: #1a1a2e;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            color: #22c55e;
+        }
+
+        .status {
+            margin: 30px;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 10px;
+            font-size: 1.3rem;
+        }
+
+        .success {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔓 فتح الجولة الآن</h1>
+    <div class="status" id="result">جاري فتح الجولة...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://antzuhakwgyuswjipmnf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFudHp1aGFrd2d5dXN3amlwbW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjA4ODUsImV4cCI6MjA4MTIzNjg4NX0.xqhNrQk2hwMzCve2kpfhH0JeYXHhsMx1FEgWajydV3A';
+
+        async function openRound() {
+            const resultDiv = document.getElementById('result');
+
+            try {
+                const { createClient } = window.supabase;
+                const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                // Update ONLY is_round_open (since round_status doesn't exist)
+                const { error } = await supabaseClient
+                    .from('settings')
+                    .update({ is_round_open: true })
+                    .gt('id', 0);
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = '<span class="success">✅ تم فتح الجولة بنجاح!<br><br>أعد تحميل صفحة Rounds الآن (Ctrl+F5)</span>';
+
+            } catch (err) {
+                resultDiv.innerHTML = '<span class="error">❌ خطأ: ' + err.message + '</span>';
+            }
+        }
+
+        // Auto-run on page load
+        setTimeout(openRound, 1000);
+    </script>
+</body>
+
+</html>

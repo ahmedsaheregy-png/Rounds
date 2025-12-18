@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>تغيير حالة الجولة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: #1a1a2e;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            color: #00d9ff;
+        }
+
+        button {
+            padding: 20px 40px;
+            margin: 10px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .open {
+            background: #22c55e;
+            color: white;
+        }
+
+        .completed {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .soon {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .status {
+            margin: 30px;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎛️ تغيير حالة الجولة</h1>
+    <div class="status" id="currentStatus">جاري التحميل...</div>
+
+    <div>
+        <button class="open" onclick="changeStatus('open')">🟢 فتح الجولة</button>
+        <button class="completed" onclick="changeStatus('completed')">🎉 جولة تمت بنجاح</button>
+        <button class="soon" onclick="changeStatus('soon')">⏳ قريباً</button>
+    </div>
+
+    <div class="status" id="result"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://antzuhakwgyuswjipmnf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFudHp1aGFrd2d5dXN3amlwbW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjA4ODUsImV4cCI6MjA4MTIzNjg4NX0.xqhNrQk2hwMzCve2kpfhH0JeYXHhsMx1FEgWajydV3A';
+
+        let supabaseClient;
+
+        async function init() {
+            const { createClient } = window.supabase;
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+            await getCurrentStatus();
+        }
+
+        async function getCurrentStatus() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('settings')
+                    .select('*')
+                    .single();
+
+                if (data) {
+                    const statusMap = {
+                        'open': '🟢 جولة مفتوحة',
+                        'completed': '🎉 جولة تمت بنجاح',
+                        'soon': '⏳ سيتم الافتتاح قريباً'
+                    };
+                    document.getElementById('currentStatus').innerHTML = `
+                        <strong>الحالة الحالية:</strong> ${statusMap[data.round_status] || data.round_status || 'غير محدد'}<br>
+                        <strong>is_round_open:</strong> ${data.is_round_open}
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('currentStatus').textContent = 'خطأ: ' + err.message;
+            }
+        }
+
+        async function changeStatus(newStatus) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'جاري التحديث...';
+
+            const isOpen = newStatus === 'open';
+
+            try {
+                const { error } = await supabaseClient
+                    .from('settings')
+                    .update({
+                        is_round_open: isOpen,
+                        round_status: newStatus
+                    })
+                    .gt('id', 0);
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = '<span style="color: #22c55e;">✅ تم التحديث بنجاح! أعد تحميل صفحة Rounds الآن.</span>';
+                await getCurrentStatus();
+
+            } catch (err) {
+                resultDiv.innerHTML = '<span style="color: #ef4444;">❌ خطأ: ' + err.message + '</span>';
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
