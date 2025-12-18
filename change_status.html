@@ -32,13 +32,8 @@
             color: white;
         }
 
-        .completed {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .soon {
-            background: #f59e0b;
+        .closed {
+            background: #ef4444;
             color: white;
         }
 
@@ -47,6 +42,15 @@
             padding: 20px;
             background: #16213e;
             border-radius: 10px;
+            font-size: 1.3rem;
+        }
+
+        .success {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #ef4444;
         }
     </style>
 </head>
@@ -56,9 +60,8 @@
     <div class="status" id="currentStatus">جاري التحميل...</div>
 
     <div>
-        <button class="open" onclick="changeStatus('open')">🟢 فتح الجولة</button>
-        <button class="completed" onclick="changeStatus('completed')">🎉 جولة تمت بنجاح</button>
-        <button class="soon" onclick="changeStatus('soon')">⏳ قريباً</button>
+        <button class="open" onclick="changeStatus(true)">🟢 فتح الجولة</button>
+        <button class="closed" onclick="changeStatus(false)">🔒 إغلاق الجولة</button>
     </div>
 
     <div class="status" id="result"></div>
@@ -84,14 +87,9 @@
                     .single();
 
                 if (data) {
-                    const statusMap = {
-                        'open': '🟢 جولة مفتوحة',
-                        'completed': '🎉 جولة تمت بنجاح',
-                        'soon': '⏳ سيتم الافتتاح قريباً'
-                    };
+                    const statusText = data.is_round_open ? '🟢 الجولة مفتوحة' : '🔒 الجولة مغلقة';
                     document.getElementById('currentStatus').innerHTML = `
-                        <strong>الحالة الحالية:</strong> ${statusMap[data.round_status] || data.round_status || 'غير محدد'}<br>
-                        <strong>is_round_open:</strong> ${data.is_round_open}
+                        <strong>الحالة الحالية:</strong> ${statusText}
                     `;
                 }
             } catch (err) {
@@ -99,28 +97,25 @@
             }
         }
 
-        async function changeStatus(newStatus) {
+        async function changeStatus(isOpen) {
             const resultDiv = document.getElementById('result');
             resultDiv.textContent = 'جاري التحديث...';
 
-            const isOpen = newStatus === 'open';
-
             try {
+                // Update ONLY is_round_open (since round_status column doesn't exist)
                 const { error } = await supabaseClient
                     .from('settings')
-                    .update({
-                        is_round_open: isOpen,
-                        round_status: newStatus
-                    })
+                    .update({ is_round_open: isOpen })
                     .gt('id', 0);
 
                 if (error) throw error;
 
-                resultDiv.innerHTML = '<span style="color: #22c55e;">✅ تم التحديث بنجاح! أعد تحميل صفحة Rounds الآن.</span>';
+                const msg = isOpen ? 'تم فتح الجولة' : 'تم إغلاق الجولة';
+                resultDiv.innerHTML = '<span class="success">✅ ' + msg + ' بنجاح!<br><br>أعد تحميل صفحة Rounds (Ctrl+F5)</span>';
                 await getCurrentStatus();
 
             } catch (err) {
-                resultDiv.innerHTML = '<span style="color: #ef4444;">❌ خطأ: ' + err.message + '</span>';
+                resultDiv.innerHTML = '<span class="error">❌ خطأ: ' + err.message + '</span>';
             }
         }
 
