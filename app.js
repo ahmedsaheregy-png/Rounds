@@ -479,25 +479,25 @@ function setupFileUploadListener() {
             const oldLabel = document.body.style.cursor;
             document.body.style.cursor = 'wait';
 
-            // 1. Upload to Supabase Storage 'avatars' bucket
+            // 1. Upload to Supabase Storage 'Rounds' bucket
             const fileExt = file.name.split('.').pop();
             const fileName = `${currentUploadId}_${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
 
             const { data, error: uploadError } = await supabaseClient.storage
-                .from('avatars')
+                .from('Rounds')
                 .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
             if (uploadError) {
                 if (uploadError.message.includes('bucket not found')) {
-                    throw new Error('لم يتم العثور على سلة التخزين "avatars". يرجى إنشاؤها في Supabase.');
+                    throw new Error('لم يتم العثور على سلة التخزين "Rounds". يرجى إنشاؤها في Supabase.');
                 }
                 throw uploadError;
             }
 
             // 2. Get Public URL
             const { data: { publicUrl } } = supabaseClient.storage
-                .from('avatars')
+                .from('Rounds')
                 .getPublicUrl(filePath);
 
             // 3. Update Record
