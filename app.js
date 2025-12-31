@@ -634,6 +634,54 @@ function updateDisplay() {
     }
 }
 
+// Image Signing Queue
+const signedUrlCache = new Map();
+
+async function queueImageSigning(id, originalUrl, imgId) {
+    if (!supabaseClient) return;
+
+    // Check cache
+    if (signedUrlCache.has(originalUrl)) {
+        const cached = signedUrlCache.get(originalUrl);
+        // Basic expiry check (if we stored timestamp) - for now just use it
+        const img = document.getElementById(imgId);
+        if (img) {
+            img.src = cached;
+            img.classList.remove('loading-img');
+        }
+        return;
+    }
+
+    try {
+        // Extract path: typically after 'Rounds/'
+        // Format: .../Rounds/filename.jpg
+        const parts = originalUrl.split('/Rounds/');
+        if (parts.length < 2) return;
+
+        let path = parts[1];
+        // Decode URI component in case of spaces etc
+        path = decodeURIComponent(path);
+
+        const { data, error } = await supabaseClient
+            .storage
+            .from('Rounds')
+            .createSignedUrl(path, 3600 * 24); // 24 hours validity
+
+        if (error) throw error;
+
+        if (data && data.signedUrl) {
+            signedUrlCache.set(originalUrl, data.signedUrl);
+            const img = document.getElementById(imgId);
+            if (img) {
+                img.src = data.signedUrl;
+                img.classList.remove('loading-img');
+            }
+        }
+    } catch (e) {
+        console.error("Error signing image:", e);
+    }
+}
+
 function renderParticipants() {
     const grid = document.getElementById('participantsGrid');
     if (!grid) return;
@@ -690,15 +738,37 @@ function renderParticipants() {
             'كاوا جوي': 'https://ahmedsaheregy-png.github.io/partner/assets/kawa_v1.jpg',      // Kawa Joy
             'أحمد شكري': 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_shukri.jpg',
             'أحمد عمار': 'https://ahmedsaheregy-png.github.io/partner/assets/ahmed_ammar.jpg',
-            'مازن': 'https://ahmedsaheregy-png.github.io/Rounds/images/mazen.jpg' // Mazen
+            // 'مازن': 'https://ahmedsaheregy-png.github.io/Rounds/images/mazen.jpg' // Mazen - Removed to test dynamic
         };
 
         for (const [namePart, imgUrl] of Object.entries(vips)) {
             if (r.full_name && r.full_name.includes(namePart)) {
-                if (!r.avatar_url || r.avatar_url !== imgUrl) {
+                // Only override if no custom avatar
+                if (!r.avatar_url) {
                     avatarHtml = `<img src="${imgUrl}" class="participant-avatar" alt="${r.full_name}">`;
                 }
             }
+        }
+
+        // --- SECURE IMAGE HANDLING ---
+        // If avatarHtml contains a Supabase Storage URL, we need to sign it
+        // We will add a data attribute and use a placeholder
+        const cardId = `card-${r.id}`;
+        card.id = cardId; // Set ID for easier access if needed
+
+        // Check if the avatarHtml created above is a Supabase URL
+        // It might be created from r.avatar_url or r.image
+        // The URL format in DB is likely ".../storage/v1/object/public/Rounds/..."
+
+        const imageUrl = r.avatar_url || r.image;
+        if (imageUrl && imageUrl.includes('/Rounds/')) {
+            const imgId = `img-${r.id}`;
+            // Use a loading placeholder or the original URL (which might fail but shows alt)
+            // Better: show a generic user icon then replace
+            avatarHtml = `<img id="${imgId}" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+" class="participant-avatar loading-img" alt="${r.full_name}">`;
+
+            // Queue for signing
+            queueImageSigning(r.id, imageUrl, imgId);
         }
 
         card.innerHTML = `
