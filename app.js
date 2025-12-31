@@ -671,9 +671,10 @@ function renderParticipants() {
             if (isNameOnly) {
                 avatarHtml = `<div class="participant-avatar placeholder">${initial}</div>`;
             } else {
-                // Full display
-                if (r.avatar_url) {
-                    avatarHtml = `<img src="${r.avatar_url}" class="participant-avatar" alt="${r.full_name}">`;
+                // Full display - check both avatar_url and image columns
+                const imageUrl = r.avatar_url || r.image;
+                if (imageUrl) {
+                    avatarHtml = `<img src="${imageUrl}" class="participant-avatar" alt="${r.full_name}">`;
                 } else {
                     avatarHtml = `<div class="participant-avatar placeholder" style="background: var(--primary); color: white;">${initial}</div>`;
                 }
